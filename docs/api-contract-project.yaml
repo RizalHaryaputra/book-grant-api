@@ -381,6 +381,41 @@ paths:
                 $ref: '#/components/schemas/SuccessResponseObject'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
+  /author/manuscripts/{manuscriptId}/metadata:
+    put:
+      summary: Update Manuscript Metadata (Perbarui Metadata Naskah)
+      tags:
+        - Modul 2 - Penulis & Manajemen Naskah (Kelompok 3)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: manuscriptId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                abstract:
+                  type: string
+                category:
+                  type: string
+      responses:
+        '200':
+          description: Metadata berhasil diperbarui.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponseObject'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
   /author/manuscripts/{manuscriptId}/reviews:
     get:
       summary: Get Manuscript Reviews (Lihat Hasil Review)
