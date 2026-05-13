@@ -1,0 +1,314 @@
+openapi: 3.0.0
+info:
+  title: API Contract - Kelompok 2 (Modul Reviewer & Proses Review)
+  description: |
+    API endpoints for assigning reviewers, viewing rubrics, and submitting reviews in the Book Grant Writing System.
+    (Endpoint API untuk penugasan reviewer, melihat rubrik, dan mengirimkan hasil review pada Sistem Penulisan Hibah Buku.)
+  version: 1.0.0
+servers:
+  - url: http://localhost:8000/api
+    description: Local Development Server / Server Pengembangan Lokal
+
+paths:
+  /admin/manuscripts/unassigned:
+    get:
+      summary: Get Unassigned Manuscripts (Dapatkan Naskah Belum Diplot)
+      description: |
+        Returns a list of manuscripts that are waiting for reviewer assignment (status initial_draft_uploaded).
+        (Mengembalikan daftar naskah yang menunggu penugasan reviewer dengan status initial_draft_uploaded.)
+      tags:
+        - Admin
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of unassigned manuscripts retrieved successfully. (Daftar naskah belum diplot berhasil diambil.)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponseList'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /admin/manuscripts/{manuscriptId}/assign-reviewer:
+    post:
+      summary: Assign Reviewer to Manuscript (Tugaskan Reviewer pada Naskah)
+      description: |
+        Admin assigns a reviewer to a specific manuscript.
+        (Admin menugaskan seorang reviewer pada naskah tertentu.)
+      tags:
+        - Admin
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/manuscriptId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - reviewer_id
+                - deadline
+              properties:
+                reviewer_id:
+                  type: integer
+                  description: ID of the reviewer. (ID dari reviewer.)
+                  example: 5
+                deadline:
+                  type: string
+                  format: date
+                  description: Review deadline date. (Tanggal tenggat waktu review.)
+                  example: "2026-05-20"
+      responses:
+        '200':
+          description: Reviewer assigned successfully. (Reviewer berhasil ditugaskan.)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /reviewer/dashboard:
+    get:
+      summary: Reviewer Dashboard (Dasbor Reviewer)
+      description: |
+        Gets a list of manuscripts assigned to the currently authenticated reviewer.
+        (Mendapatkan daftar naskah yang ditugaskan kepada reviewer yang sedang login.)
+      tags:
+        - Reviewer
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Dashboard data retrieved successfully. (Data dasbor berhasil diambil.)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponseList'
+
+  /reviewer/manuscripts/{manuscriptId}:
+    get:
+      summary: Get Manuscript Details for Review (Dapatkan Detail Naskah untuk Direview)
+      description: |
+        Returns the details of a manuscript including the link to download the draft.
+        (Mengembalikan detail naskah termasuk tautan untuk mengunduh draf.)
+      tags:
+        - Reviewer
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/manuscriptId'
+      responses:
+        '200':
+          description: Manuscript details retrieved successfully. (Detail naskah berhasil diambil.)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponseObject'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+
+  /reviewer/manuscripts/{manuscriptId}/rubric:
+    get:
+      summary: Get Review Rubric (Dapatkan Rubrik Penilaian)
+      description: |
+        Retrieves the rubric criteria to be filled by the reviewer.
+        (Mengambil kriteria rubrik yang harus diisi oleh reviewer.)
+      tags:
+        - Reviewer
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/manuscriptId'
+      responses:
+        '200':
+          description: Rubric retrieved successfully. (Rubrik berhasil diambil.)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponseList'
+
+  /reviewer/manuscripts/{manuscriptId}/review:
+    post:
+      summary: Submit Review Result (Kirim Hasil Review)
+      description: |
+        Submits the rubric scores and narrative feedback.
+        (Mengirimkan nilai rubrik dan catatan umpan balik naratif.)
+      tags:
+        - Reviewer
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/manuscriptId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - rubric_scores
+                - narrative_feedback
+              properties:
+                rubric_scores:
+                  type: array
+                  description: Array of scores based on criteria. (Array nilai berdasarkan kriteria.)
+                  items:
+                    type: object
+                    required:
+                      - criteria_id
+                      - score
+                    properties:
+                      criteria_id:
+                        type: integer
+                        example: 1
+                      score:
+                        type: integer
+                        example: 85
+                narrative_feedback:
+                  type: string
+                  description: Narrative feedback from reviewer. (Catatan naratif dari reviewer.)
+                  example: "Secara keseluruhan bagus, namun pada bab 2 perlu ditambahkan referensi jurnal terbaru."
+      responses:
+        '200':
+          description: Review submitted successfully. (Review berhasil dikirim.)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponseObject'
+
+  /manuscripts/{manuscriptId}/compiled-reviews:
+    get:
+      summary: Get Compiled Reviews (Dapatkan Kompilasi Review)
+      description: |
+        Returns the compilation of all reviews for a manuscript (used by Authors and Admins).
+        (Mengembalikan kompilasi dari semua review untuk sebuah naskah, digunakan oleh Penulis dan Admin.)
+      tags:
+        - Shared
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/manuscriptId'
+      responses:
+        '200':
+          description: Compiled reviews retrieved successfully. (Kompilasi review berhasil diambil.)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponseObject'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    manuscriptId:
+      name: manuscriptId
+      in: path
+      required: true
+      schema:
+        type: integer
+      description: The ID of the manuscript. (ID dari naskah.)
+
+  schemas:
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          description: Success message. (Pesan sukses.)
+          example: "Operation successful. (Operasi berhasil.)"
+        data:
+          type: object
+          nullable: true
+          example: null
+
+    SuccessResponseObject:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "Data retrieved successfully. (Data berhasil diambil.)"
+        data:
+          type: object
+          example: { id: 1, status: "review_completed" }
+
+    SuccessResponseList:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "List retrieved successfully. (Daftar berhasil diambil.)"
+        data:
+          type: array
+          items:
+            type: object
+          example: [ { id: 1, title: "Manuskrip A" } ]
+
+  responses:
+    UnauthorizedError:
+      description: Unauthorized (Tidak sah)
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              message:
+                type: string
+                example: "Unauthenticated. (Tidak diautentikasi.)"
+              data:
+                type: object
+                nullable: true
+                example: null
+    ForbiddenError:
+      description: Forbidden (Dilarang)
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              message:
+                type: string
+                example: "You do not have permission to access this resource. (Anda tidak memiliki izin untuk mengakses sumber daya ini.)"
+              data:
+                type: object
+                nullable: true
+                example: null
+    NotFoundError:
+      description: Not Found (Tidak Ditemukan)
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              message:
+                type: string
+                example: "Resource not found. (Sumber daya tidak ditemukan.)"
+              data:
+                type: object
+                nullable: true
+                example: null
