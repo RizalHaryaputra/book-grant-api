@@ -25,15 +25,18 @@ tags:
     description: Validasi pra-cetak, keputusan penerbit, reminder email, dashboard sistem.
 
 paths:
+
   # ==========================================
   # MODUL 1: FONDASI SISTEM & KONTRAK (KLP 4)
   # ==========================================
+
   /auth/login:
     post:
       summary: Login Pengguna
       description: |
         Endpoint login untuk semua role (admin, penulis, reviewer, penerbit).
         Mengembalikan Bearer Token untuk autentikasi request selanjutnya.
+        Akun yang tidak aktif (is_active: false) tidak dapat login.
       tags:
         - Modul 1 - Fondasi Sistem & Kontrak (Kelompok 4)
       requestBody:
@@ -71,24 +74,63 @@ paths:
                     properties:
                       token:
                         type: string
+                        example: "1|abcdefghijklmnopqrstuvwxyz"
                       user:
                         type: object
                         properties:
                           id:
                             type: integer
+                            example: 1
                           name:
                             type: string
+                            example: "Administrator"
                           email:
                             type: string
+                            example: "admin@hibahbuku.id"
                           role:
                             type: string
+                            example: "admin"
         '401':
-          $ref: '#/components/responses/UnauthorizedError'
+          description: Email atau password salah.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: "Email atau password salah."
+                  data:
+                    nullable: true
+                    example: null
+        '403':
+          description: Akun tidak aktif.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: "Akun tidak aktif. Hubungi admin."
+                  data:
+                    nullable: true
+                    example: null
         '422':
           $ref: '#/components/responses/ValidationError'
+
   /auth/logout:
     post:
       summary: Logout Pengguna
+      description: |
+        Menghapus token aktif milik user yang sedang login.
+        Membutuhkan Bearer Token di header Authorization.
       tags:
         - Modul 1 - Fondasi Sistem & Kontrak (Kelompok 4)
       security:
@@ -102,9 +144,13 @@ paths:
                 $ref: '#/components/schemas/SuccessResponse'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
+
   /auth/me:
     get:
       summary: Data User yang Sedang Login
+      description: |
+        Mengembalikan data lengkap user yang sedang terautentikasi,
+        termasuk role dan data author (jika rolenya penulis).
       tags:
         - Modul 1 - Fondasi Sistem & Kontrak (Kelompok 4)
       security:
@@ -119,13 +165,22 @@ paths:
                 properties:
                   success:
                     type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Data user berhasil diambil."
                   data:
                     $ref: '#/components/schemas/User'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
+
   /admin/users:
     get:
       summary: Daftar Semua User
+      description: |
+        Admin melihat daftar semua user (penulis, reviewer, penerbit).
+        Bisa difilter berdasarkan role menggunakan query parameter ?role=.
+        Akun admin tidak ditampilkan di daftar ini.
       tags:
         - Modul 1 - Fondasi Sistem & Kontrak (Kelompok 4)
       security:
@@ -133,9 +188,12 @@ paths:
       parameters:
         - name: role
           in: query
+          required: false
           schema:
             type: string
             enum: [penulis, reviewer, penerbit]
+          description: Filter user berdasarkan role.
+          example: reviewer
       responses:
         '200':
           description: Daftar user berhasil diambil.
@@ -144,6 +202,12 @@ paths:
               schema:
                 type: object
                 properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Daftar user berhasil diambil."
                   data:
                     type: array
                     items:
@@ -152,8 +216,13 @@ paths:
           $ref: '#/components/responses/UnauthorizedError'
         '403':
           $ref: '#/components/responses/ForbiddenError'
+
     post:
       summary: Buat Akun Reviewer atau Penerbit
+      description: |
+        Admin membuat akun baru untuk role reviewer atau penerbit.
+        Akun penulis tidak dibuat di sini — di-generate otomatis
+        melalui form kesediaan (/author-confirmations).
       tags:
         - Modul 1 - Fondasi Sistem & Kontrak (Kelompok 4)
       security:
@@ -168,29 +237,49 @@ paths:
               properties:
                 name:
                   type: string
+                  example: "Prof. Sari Dewi"
                 email:
                   type: string
+                  format: email
+                  example: "sari.dewi@uny.ac.id"
                 role:
                   type: string
                   enum: [reviewer, penerbit]
+                  example: reviewer
                 password:
                   type: string
+                  format: password
+                  minLength: 8
+                  example: "password123"
       responses:
         '201':
           description: Akun berhasil dibuat.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SuccessResponseObject'
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Akun reviewer berhasil dibuat."
+                  data:
+                    $ref: '#/components/schemas/User'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
         '403':
           $ref: '#/components/responses/ForbiddenError'
         '422':
           $ref: '#/components/responses/ValidationError'
+
   /admin/users/{id}:
     put:
       summary: Update Data User
+      description: |
+        Admin mengupdate data user (nama, status aktif, atau password).
+        Semua field bersifat opsional — hanya field yang dikirim yang diupdate.
       tags:
         - Modul 1 - Fondasi Sistem & Kontrak (Kelompok 4)
       security:
@@ -201,6 +290,7 @@ paths:
           required: true
           schema:
             type: integer
+          description: ID dari user.
       requestBody:
         required: true
         content:
@@ -210,10 +300,16 @@ paths:
               properties:
                 name:
                   type: string
+                  example: "Prof. Sari Dewi, M.Pd."
                 is_active:
                   type: boolean
+                  description: Nonaktifkan atau aktifkan akun user.
+                  example: false
                 password:
                   type: string
+                  format: password
+                  minLength: 8
+                  example: "newpassword123"
       responses:
         '200':
           description: User berhasil diupdate.
@@ -229,8 +325,12 @@ paths:
           $ref: '#/components/responses/NotFoundError'
         '422':
           $ref: '#/components/responses/ValidationError'
+
     delete:
       summary: Hapus User
+      description: |
+        Admin menghapus akun user. Akun admin tidak dapat dihapus.
+        Penghapusan akun penulis juga menghapus data author terkait (cascade).
       tags:
         - Modul 1 - Fondasi Sistem & Kontrak (Kelompok 4)
       security:
@@ -241,6 +341,7 @@ paths:
           required: true
           schema:
             type: integer
+          description: ID dari user.
       responses:
         '200':
           description: User berhasil dihapus.
@@ -254,10 +355,22 @@ paths:
           $ref: '#/components/responses/ForbiddenError'
         '404':
           $ref: '#/components/responses/NotFoundError'
+
   /author-confirmations:
     post:
       summary: Submit Form Kesediaan Penulis
-      description: Endpoint publik (tanpa login).
+      description: |
+        Endpoint publik (tanpa login) untuk penulis mengisi form konfirmasi
+        kesediaan menulis buku.
+
+        Setelah form berhasil disubmit, sistem akan otomatis:
+        1. Menyimpan data konfirmasi dengan status "pending".
+        2. Membuat akun user dengan role penulis.
+        3. Membuat data author dengan status "registered".
+        4. Mengirim email berisi username dan password ke penulis.
+        5. Mengubah status konfirmasi menjadi "processed".
+
+        Email yang sudah pernah digunakan tidak dapat submit ulang.
       tags:
         - Modul 1 - Fondasi Sistem & Kontrak (Kelompok 4)
       requestBody:
@@ -270,28 +383,53 @@ paths:
               properties:
                 name:
                   type: string
+                  example: "Dr. Budi Santoso, M.Kom."
                 email:
                   type: string
+                  format: email
+                  example: "budi@uny.ac.id"
                 institution:
                   type: string
+                  example: "Universitas Negeri Yogyakarta"
                 phone:
                   type: string
+                  example: "08123456789"
                 book_title:
                   type: string
+                  example: "Pengantar Ilmu Komputer untuk Perguruan Tinggi"
                 book_type:
                   type: string
                   enum: [ajar, referensi]
+                  description: |
+                    Jenis buku yang akan ditulis:
+                    - ajar: Buku ajar / textbook untuk perkuliahan.
+                    - referensi: Buku referensi / monograf ilmiah.
+                  example: ajar
       responses:
         '201':
-          description: Form kesediaan berhasil disubmit.
+          description: Form berhasil disubmit dan akun dikirim ke email penulis.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SuccessResponse'
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Form kesediaan berhasil dikirim. Akun telah dikirim ke email Anda."
+                  data:
+                    nullable: true
+                    example: null
         '422':
           $ref: '#/components/responses/ValidationError'
+
     get:
       summary: Daftar Form Kesediaan (Admin)
+      description: |
+        Admin melihat semua data form kesediaan yang masuk.
+        Bisa difilter berdasarkan status (pending / processed).
       tags:
         - Modul 1 - Fondasi Sistem & Kontrak (Kelompok 4)
       security:
@@ -299,9 +437,12 @@ paths:
       parameters:
         - name: status
           in: query
+          required: false
           schema:
             type: string
             enum: [pending, processed]
+          description: Filter berdasarkan status konfirmasi.
+          example: pending
       responses:
         '200':
           description: Daftar form kesediaan berhasil diambil.
@@ -310,6 +451,12 @@ paths:
               schema:
                 type: object
                 properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Daftar form kesediaan berhasil diambil."
                   data:
                     type: array
                     items:
@@ -318,6 +465,237 @@ paths:
           $ref: '#/components/responses/UnauthorizedError'
         '403':
           $ref: '#/components/responses/ForbiddenError'
+
+  /author/contracts/upload:
+    post:
+      summary: Upload File Kontrak (Penulis)
+      description: |
+        Penulis mengunggah file kontrak hibah yang sudah ditandatangani dalam format PDF.
+        Endpoint ini hanya bisa diakses oleh penulis yang sudah login dan
+        status akunnya sudah "account_created" atau "contract_generated".
+
+        Setelah berhasil upload:
+        - Status author berubah menjadi "contract_uploaded".
+        - Admin mendapatkan notifikasi email untuk melakukan pengecekan dan validasi.
+
+        Hanya menerima file PDF dengan ukuran maksimal 5MB.
+      tags:
+        - Modul 1 - Fondasi Sistem & Kontrak (Kelompok 4)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [contract_file]
+              properties:
+                contract_file:
+                  type: string
+                  format: binary
+                  description: File kontrak dalam format PDF, maksimal 5MB.
+      responses:
+        '201':
+          description: File kontrak berhasil diunggah. Admin akan segera diberitahu.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Kontrak berhasil diunggah. Admin akan melakukan verifikasi."
+                  data:
+                    $ref: '#/components/schemas/Contract'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '422':
+          description: File tidak valid (bukan PDF atau melebihi 5MB).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+
+  /author/contracts/my:
+    get:
+      summary: Lihat Status Kontrak Saya (Penulis)
+      description: |
+        Penulis melihat data dan status kontrak miliknya sendiri.
+        Status kontrak: pending_upload → contract_uploaded → contract_validated → contract_rejected.
+      tags:
+        - Modul 1 - Fondasi Sistem & Kontrak (Kelompok 4)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Data kontrak berhasil diambil.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Data kontrak berhasil diambil."
+                  data:
+                    $ref: '#/components/schemas/Contract'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          description: Kontrak belum pernah diunggah.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: "Kontrak belum diunggah."
+                  data:
+                    nullable: true
+                    example: null
+
+  /admin/contracts:
+    get:
+      summary: Daftar Kontrak Masuk (Admin)
+      description: |
+        Admin melihat semua kontrak yang sudah diunggah oleh penulis.
+        Bisa difilter berdasarkan status kontrak.
+      tags:
+        - Modul 1 - Fondasi Sistem & Kontrak (Kelompok 4)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [contract_uploaded, contract_validated, contract_rejected]
+          description: Filter kontrak berdasarkan status.
+          example: contract_uploaded
+      responses:
+        '200':
+          description: Daftar kontrak berhasil diambil.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Daftar kontrak berhasil diambil."
+                  data:
+                    type: array
+                    items:
+                      allOf:
+                        - $ref: '#/components/schemas/Contract'
+                        - type: object
+                          properties:
+                            author:
+                              type: object
+                              properties:
+                                id:
+                                  type: integer
+                                  example: 3
+                                name:
+                                  type: string
+                                  example: "Dr. Budi Santoso"
+                                email:
+                                  type: string
+                                  example: "budi@uny.ac.id"
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+
+  /admin/contracts/{id}/validate:
+    put:
+      summary: Validasi atau Tolak Kontrak (Admin)
+      description: |
+        Admin memvalidasi atau menolak kontrak yang sudah diunggah penulis.
+
+        Jika decision = "validated":
+        - Status author berubah menjadi "contract_validated".
+        - Penulis mendapatkan notifikasi email berisi arahan untuk upload draft awal.
+
+        Jika decision = "rejected":
+        - Status author berubah menjadi "contract_rejected".
+        - Penulis mendapatkan notifikasi email berisi alasan penolakan dan
+          diminta untuk mengunggah ulang file kontrak.
+        - Field rejection_reason wajib diisi.
+      tags:
+        - Modul 1 - Fondasi Sistem & Kontrak (Kelompok 4)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID dari kontrak.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [decision]
+              properties:
+                decision:
+                  type: string
+                  enum: [validated, rejected]
+                  description: Keputusan admin terhadap kontrak.
+                  example: validated
+                rejection_reason:
+                  type: string
+                  description: |
+                    Alasan penolakan kontrak. Wajib diisi jika decision = "rejected".
+                  example: "Tanda tangan tidak sesuai dengan KTP. Mohon unggah ulang."
+      responses:
+        '200':
+          description: Status kontrak berhasil diperbarui.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Kontrak berhasil divalidasi. Penulis telah diberitahu."
+                  data:
+                    $ref: '#/components/schemas/Contract'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '422':
+          description: rejection_reason wajib diisi jika decision = rejected.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
 
   # ==========================================
   # MODUL 2: PENULIS & MANAJEMEN NASKAH (KLP 3)
@@ -616,6 +994,9 @@ paths:
   /reviewer/manuscripts/{manuscriptId}/rubric:
     get:
       summary: Get Review Rubric (Dapatkan Rubrik Penilaian)
+      description: |
+        Retrieves the rubric criteria. The returned array is dynamic and automatically differs depending on whether the manuscript is a 'buku_ajar' or 'buku_referensi'.
+        (Mengambil kriteria rubrik. Array yang dikembalikan bersifat dinamis dan otomatis menyesuaikan apakah naskah tersebut 'buku_ajar' atau 'buku_referensi'.)
       tags:
         - Modul 3 - Reviewer & Proses Review (Kelompok 2)
       security:
@@ -1158,6 +1539,21 @@ components:
       bearerFormat: JWT
 
   schemas:
+    Link:
+      type: object
+      properties:
+        rel:
+          type: string
+          description: Hubungan tautan (misal 'self', 'assign_reviewer').
+          example: "assign_reviewer"
+        method:
+          type: string
+          description: HTTP Method yang digunakan untuk endpoint tersebut.
+          example: "POST"
+        href:
+          type: string
+          description: URL tujuan.
+          example: "http://localhost/api/admin/manuscripts/1/assign-reviewer"
     SuccessResponse:
       type: object
       properties:
@@ -1183,7 +1579,18 @@ components:
           example: "Data retrieved successfully. (Data berhasil diambil.)"
         data:
           type: object
-          example: { id: 1, status: "review_completed" }
+          properties:
+            links:
+              type: array
+              items:
+                $ref: '#/components/schemas/Link'
+          example: 
+            id: 1
+            status: "unassigned"
+            links:
+              - rel: "assign_reviewer"
+                method: "POST"
+                href: "http://localhost/api/admin/manuscripts/1/assign-reviewer"
     SuccessResponseList:
       type: object
       properties:
@@ -1197,7 +1604,18 @@ components:
           type: array
           items:
             type: object
-          example: [ { id: 1, title: "Manuskrip A" } ]
+            properties:
+              links:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Link'
+          example: 
+            - id: 1
+              title: "Manuskrip A"
+              links:
+                - rel: "assign_reviewer"
+                  method: "POST"
+                  href: "http://localhost/api/admin/manuscripts/1/assign-reviewer"
     ValidationErrorResponse:
       type: object
       properties:
@@ -1255,6 +1673,41 @@ components:
           type: string
         created_at:
           type: string
+    Contract:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        author_id:
+          type: integer
+          example: 3
+        file_url:
+          type: string
+          description: URL untuk mengakses/mengunduh file PDF kontrak.
+          example: "http://localhost:8000/storage/contracts/kontrak_budi_2026.pdf"
+        status:
+          type: string
+          enum: [contract_uploaded, contract_validated, contract_rejected]
+          example: contract_uploaded
+        rejection_reason:
+          type: string
+          nullable: true
+          description: Alasan penolakan kontrak oleh admin (jika ditolak).
+          example: null
+        validated_at:
+          type: string
+          format: date-time
+          nullable: true
+          example: null
+        created_at:
+          type: string
+          format: date-time
+          example: "2026-05-01T09:00:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          example: "2026-05-01T09:00:00Z"
 
   responses:
     UnauthorizedError:
