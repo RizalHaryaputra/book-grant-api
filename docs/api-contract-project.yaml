@@ -1,0 +1,1304 @@
+openapi: 3.0.0
+info:
+  title: API Contract - Sistem Penulisan Hibah Buku (Full Project)
+  description: |
+    API Master Contract for all 4 modules in the Book Grant Writing System.
+    (Kontrak Master API untuk ke-4 modul pada Sistem Penulisan Hibah Buku.)
+
+    Termasuk: Modul 1 Fondasi Sistem, User, Role & Kontrak (Kelompok 4)
+    Modul 2 Penulis & Manajemen Naskah (Kelompok 3)
+    Modul 3 Reviewer & Proses Review (Kelompok 2)
+    Modul 4 Penerbit, Pra-Cetak & Monitoring (Kelompok 1)
+  version: 1.0.0
+servers:
+  - url: http://localhost:8000/api
+    description: Local Development Server / Server Pengembangan Lokal
+
+tags:
+  - name: Modul 1 - Fondasi Sistem & Kontrak (Kelompok 4)
+    description: Login, role access, master data, akun, generate kontrak, validasi kontrak.
+  - name: Modul 2 - Penulis & Manajemen Naskah (Kelompok 3)
+    description: Dashboard penulis, unggah draft awal, revisi naskah, dokumen administrasi.
+  - name: Modul 3 - Reviewer & Proses Review (Kelompok 2)
+    description: Plotting reviewer, assignment, penilaian rubrik, feedback, status review.
+  - name: Modul 4 - Penerbit, Pra-Cetak, & Monitoring (Kelompok 1)
+    description: Validasi pra-cetak, keputusan penerbit, reminder email, dashboard sistem.
+
+paths:
+  # ==========================================
+  # MODUL 1: FONDASI SISTEM & KONTRAK (KLP 4)
+  # ==========================================
+  /auth/login:
+    post:
+      summary: Login Pengguna
+      description: |
+        Endpoint login untuk semua role (admin, penulis, reviewer, penerbit).
+        Mengembalikan Bearer Token untuk autentikasi request selanjutnya.
+      tags:
+        - Modul 1 - Fondasi Sistem & Kontrak (Kelompok 4)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: "admin@hibahbuku.id"
+                password:
+                  type: string
+                  format: password
+                  example: "admin123"
+      responses:
+        '200':
+          description: Login berhasil.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Login berhasil."
+                  data:
+                    type: object
+                    properties:
+                      token:
+                        type: string
+                      user:
+                        type: object
+                        properties:
+                          id:
+                            type: integer
+                          name:
+                            type: string
+                          email:
+                            type: string
+                          role:
+                            type: string
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /auth/logout:
+    post:
+      summary: Logout Pengguna
+      tags:
+        - Modul 1 - Fondasi Sistem & Kontrak (Kelompok 4)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Logout berhasil.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+  /auth/me:
+    get:
+      summary: Data User yang Sedang Login
+      tags:
+        - Modul 1 - Fondasi Sistem & Kontrak (Kelompok 4)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Data user berhasil diambil.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+  /admin/users:
+    get:
+      summary: Daftar Semua User
+      tags:
+        - Modul 1 - Fondasi Sistem & Kontrak (Kelompok 4)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: role
+          in: query
+          schema:
+            type: string
+            enum: [penulis, reviewer, penerbit]
+      responses:
+        '200':
+          description: Daftar user berhasil diambil.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+    post:
+      summary: Buat Akun Reviewer atau Penerbit
+      tags:
+        - Modul 1 - Fondasi Sistem & Kontrak (Kelompok 4)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, role, password]
+              properties:
+                name:
+                  type: string
+                email:
+                  type: string
+                role:
+                  type: string
+                  enum: [reviewer, penerbit]
+                password:
+                  type: string
+      responses:
+        '201':
+          description: Akun berhasil dibuat.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponseObject'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /admin/users/{id}:
+    put:
+      summary: Update Data User
+      tags:
+        - Modul 1 - Fondasi Sistem & Kontrak (Kelompok 4)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                is_active:
+                  type: boolean
+                password:
+                  type: string
+      responses:
+        '200':
+          description: User berhasil diupdate.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponseObject'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+    delete:
+      summary: Hapus User
+      tags:
+        - Modul 1 - Fondasi Sistem & Kontrak (Kelompok 4)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: User berhasil dihapus.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+  /author-confirmations:
+    post:
+      summary: Submit Form Kesediaan Penulis
+      description: Endpoint publik (tanpa login).
+      tags:
+        - Modul 1 - Fondasi Sistem & Kontrak (Kelompok 4)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, book_title, book_type]
+              properties:
+                name:
+                  type: string
+                email:
+                  type: string
+                institution:
+                  type: string
+                phone:
+                  type: string
+                book_title:
+                  type: string
+                book_type:
+                  type: string
+                  enum: [ajar, referensi]
+      responses:
+        '201':
+          description: Form kesediaan berhasil disubmit.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+    get:
+      summary: Daftar Form Kesediaan (Admin)
+      tags:
+        - Modul 1 - Fondasi Sistem & Kontrak (Kelompok 4)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, processed]
+      responses:
+        '200':
+          description: Daftar form kesediaan berhasil diambil.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AuthorConfirmation'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+
+  # ==========================================
+  # MODUL 2: PENULIS & MANAJEMEN NASKAH (KLP 3)
+  # ==========================================
+  /author/dashboard:
+    get:
+      summary: Author Dashboard (Dasbor Penulis)
+      tags:
+        - Modul 2 - Penulis & Manajemen Naskah (Kelompok 3)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Data dasbor berhasil diambil.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponseObject'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+  /author/manuscripts/drafts:
+    post:
+      summary: Upload Initial Draft (Unggah Draft Awal)
+      tags:
+        - Modul 2 - Penulis & Manajemen Naskah (Kelompok 3)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file_draft
+                - title
+                - book_type
+                - abstract
+                - total_pages
+                - category
+              properties:
+                file_draft:
+                  type: string
+                  format: binary
+                title:
+                  type: string
+                book_type:
+                  type: string
+                abstract:
+                  type: string
+                total_pages:
+                  type: integer
+                category:
+                  type: string
+      responses:
+        '201':
+          description: Draft awal berhasil diunggah.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponseObject'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+  /author/manuscripts/{manuscriptId}/metadata:
+    put:
+      summary: Update Manuscript Metadata (Perbarui Metadata Naskah)
+      tags:
+        - Modul 2 - Penulis & Manajemen Naskah (Kelompok 3)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: manuscriptId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                abstract:
+                  type: string
+                category:
+                  type: string
+      responses:
+        '200':
+          description: Metadata berhasil diperbarui.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponseObject'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+  /author/manuscripts/{manuscriptId}/reviews:
+    get:
+      summary: Get Manuscript Reviews (Lihat Hasil Review)
+      tags:
+        - Modul 2 - Penulis & Manajemen Naskah (Kelompok 3)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: manuscriptId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Hasil review berhasil diambil.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponseList'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+  /author/manuscripts/{manuscriptId}/revisions:
+    post:
+      summary: Upload Revision (Unggah Revisi Naskah)
+      tags:
+        - Modul 2 - Penulis & Manajemen Naskah (Kelompok 3)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: manuscriptId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file_revision
+              properties:
+                file_revision:
+                  type: string
+                  format: binary
+                revision_note:
+                  type: string
+      responses:
+        '201':
+          description: Revisi naskah berhasil diunggah.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponseObject'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+  /author/manuscripts/{manuscriptId}/documents:
+    post:
+      summary: Upload Administrative Document (Unggah Dokumen Administrasi)
+      tags:
+        - Modul 2 - Penulis & Manajemen Naskah (Kelompok 3)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: manuscriptId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - document_file
+                - document_type
+              properties:
+                document_file:
+                  type: string
+                  format: binary
+                document_type:
+                  type: string
+                  enum:
+                    - surat_pernyataan
+                    - scan_bermeterai
+      responses:
+        '201':
+          description: Dokumen administrasi berhasil diunggah.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponseObject'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  # ==========================================
+  # MODUL 3: REVIEWER & PROSES REVIEW (KLP 2)
+  # ==========================================
+  /admin/manuscripts/unassigned:
+    get:
+      summary: Get Unassigned Manuscripts (Dapatkan Naskah Belum Diplot)
+      tags:
+        - Modul 3 - Reviewer & Proses Review (Kelompok 2)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Daftar naskah belum diplot berhasil diambil.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponseList'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+  /admin/manuscripts/{manuscriptId}/assign-reviewer:
+    post:
+      summary: Assign Reviewer to Manuscript (Tugaskan Reviewer pada Naskah)
+      tags:
+        - Modul 3 - Reviewer & Proses Review (Kelompok 2)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: manuscriptId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - reviewer_id
+                - deadline
+              properties:
+                reviewer_id:
+                  type: integer
+                  description: ID of the reviewer. (ID dari reviewer.)
+                  example: 5
+                deadline:
+                  type: string
+                  format: date
+                  description: Review deadline date. (Tanggal tenggat waktu review.)
+                  example: "2026-05-20"
+      responses:
+        '200':
+          description: Reviewer berhasil ditugaskan.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+  /reviewer/dashboard:
+    get:
+      summary: Reviewer Dashboard (Dasbor Reviewer)
+      tags:
+        - Modul 3 - Reviewer & Proses Review (Kelompok 2)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Data dasbor berhasil diambil.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponseList'
+  /reviewer/manuscripts/{manuscriptId}:
+    get:
+      summary: Get Manuscript Details for Review (Dapatkan Detail Naskah untuk Direview)
+      tags:
+        - Modul 3 - Reviewer & Proses Review (Kelompok 2)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: manuscriptId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Detail naskah berhasil diambil.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponseObject'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+  /reviewer/manuscripts/{manuscriptId}/rubric:
+    get:
+      summary: Get Review Rubric (Dapatkan Rubrik Penilaian)
+      tags:
+        - Modul 3 - Reviewer & Proses Review (Kelompok 2)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: manuscriptId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Rubrik berhasil diambil.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponseList'
+  /reviewer/manuscripts/{manuscriptId}/review:
+    post:
+      summary: Submit Review Result (Kirim Hasil Review)
+      tags:
+        - Modul 3 - Reviewer & Proses Review (Kelompok 2)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: manuscriptId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - rubric_scores
+                - narrative_feedback
+              properties:
+                rubric_scores:
+                  type: array
+                  description: Array of scores based on criteria. (Array nilai berdasarkan kriteria.)
+                  items:
+                    type: object
+                    required:
+                      - criteria_id
+                      - score
+                    properties:
+                      criteria_id:
+                        type: integer
+                        example: 1
+                      score:
+                        type: integer
+                        example: 85
+                narrative_feedback:
+                  type: string
+                  description: Narrative feedback from reviewer. (Catatan naratif dari reviewer.)
+                  example: "Secara keseluruhan bagus, namun pada bab 2 perlu ditambahkan referensi jurnal terbaru."
+      responses:
+        '200':
+          description: Review berhasil dikirim.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponseObject'
+  /manuscripts/{manuscriptId}/compiled-reviews:
+    get:
+      summary: Get Compiled Reviews (Dapatkan Kompilasi Review)
+      tags:
+        - Modul 3 - Reviewer & Proses Review (Kelompok 2)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: manuscriptId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Kompilasi review berhasil diambil.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponseObject'
+
+  # ==========================================
+  # MODUL 4: PENERBIT, PRA-CETAK & MONITORING (KLP 1)
+  # ==========================================
+  /publisher/dashboard:
+    get:
+      summary: Publisher Dashboard (Dasbor Penerbit)
+      description: |
+        Menampilkan ringkasan tugas penerbit:
+        - jumlah naskah pra-cetak
+        - jumlah approved bulan ini
+        - jumlah revised bulan ini
+        - daftar 5 naskah pra-cetak terbaru
+      tags:
+        - Modul 4 - Penerbit, Pra-Cetak, & Monitoring (Kelompok 1)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Data dashboard penerbit berhasil diambil.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      preprint_count:
+                        type: integer
+                      approved_count_this_month:
+                        type: integer
+                      revised_count_this_month:
+                        type: integer
+                      latest_preprints:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: integer
+                            title:
+                              type: string
+                            author:
+                              type: string
+                            submitted_at:
+                              type: string
+                              format: date-time
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+  /publisher/preprint-list:
+    get:
+      summary: Get Preprint Manuscripts List (Daftar Naskah Pra-Cetak)
+      description: |
+        Mengembalikan daftar naskah status `preprint` dengan pagination.
+      tags:
+        - Modul 4 - Penerbit, Pra-Cetak, & Monitoring (Kelompok 1)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+        - name: kelengkapan
+          in: query
+          schema:
+            type: string
+            enum: [pending, partial, complete]
+      responses:
+        '200':
+          description: Daftar naskah pra-cetak berhasil diambil.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: integer
+                            title:
+                              type: string
+                            author_name:
+                              type: string
+                            submitted_at:
+                              type: string
+                            cover_checked:
+                              type: boolean
+                            pages_checked:
+                              type: boolean
+                            admin_checked:
+                              type: boolean
+                      pagination:
+                        type: object
+                        properties:
+                          page:
+                            type: integer
+                          limit:
+                            type: integer
+                          total:
+                            type: integer
+                          total_pages:
+                            type: integer
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+  /publisher/check/{manuscriptId}:
+    get:
+      summary: Get Preprint Check Data (Ambil Data Pemeriksaan Pra-Cetak)
+      tags:
+        - Modul 4 - Penerbit, Pra-Cetak, & Monitoring (Kelompok 1)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: manuscriptId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Data pemeriksaan berhasil diambil.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      manuscript:
+                        type: object
+                        properties:
+                          id:
+                            type: integer
+                          title:
+                            type: string
+                          author_name:
+                            type: string
+                          cover_file_url:
+                            type: string
+                          page_count:
+                            type: integer
+                          admin_documents:
+                            type: array
+                            items:
+                              type: object
+                      check_result:
+                        type: object
+                        nullable: true
+                        properties:
+                          cover_ok:
+                            type: boolean
+                          pages_ok:
+                            type: boolean
+                          admin_ok:
+                            type: boolean
+                          notes:
+                            type: string
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+    post:
+      summary: Save Preprint Check (Simpan Hasil Pemeriksaan Pra-Cetak)
+      tags:
+        - Modul 4 - Penerbit, Pra-Cetak, & Monitoring (Kelompok 1)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: manuscriptId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - cover_ok
+                - pages_ok
+                - admin_ok
+              properties:
+                cover_ok:
+                  type: boolean
+                pages_ok:
+                  type: boolean
+                admin_ok:
+                  type: boolean
+                notes:
+                  type: string
+      responses:
+        '200':
+          description: Pemeriksaan berhasil disimpan.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+  /publisher/decision:
+    post:
+      summary: Publisher Decision (Keputusan Penerbit)
+      description: |
+        Memberikan keputusan akhir penerbit: approved atau revised.
+        Jika revised, wajib menyertakan revision_notes.
+      tags:
+        - Modul 4 - Penerbit, Pra-Cetak, & Monitoring (Kelompok 1)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - manuscript_id
+                - decision
+              properties:
+                manuscript_id:
+                  type: integer
+                decision:
+                  type: string
+                  enum: [approved, revised]
+                revision_notes:
+                  type: string
+      responses:
+        '200':
+          description: Keputusan berhasil disimpan.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponseObject'
+        '400':
+          description: Bad request
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+  /admin/dashboard-stats:
+    get:
+      summary: Admin Dashboard Statistics (Statistik Dasbor Admin)
+      description: |
+        Ringkasan statistik untuk admin: jumlah penulis, kontrak valid, draft masuk, review berjalan, revisi, pra-cetak, siap cetak.
+      tags:
+        - Modul 4 - Penerbit, Pra-Cetak, & Monitoring (Kelompok 1)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Statistik berhasil diambil.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      total_penulis:
+                        type: integer
+                      total_kontrak_valid:
+                        type: integer
+                      total_draft_masuk:
+                        type: integer
+                      total_review_berjalan:
+                        type: integer
+                      total_revisi:
+                        type: integer
+                      total_pracetak:
+                        type: integer
+                      total_siap_cetak:
+                        type: integer
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+  /admin/notification-logs:
+    get:
+      summary: Get Notification Logs (Log Notifikasi Email)
+      description: |
+        Admin melihat riwayat pengiriman email dengan filter dan pagination.
+      tags:
+        - Modul 4 - Penerbit, Pra-Cetak, & Monitoring (Kelompok 1)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [akun, kontrak, upload_draft, plotting, hasil_review, pracetak, approved, revised, reminder]
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, sent, failed]
+      responses:
+        '200':
+          description: Log notifikasi berhasil diambil.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: integer
+                            recipient:
+                              type: string
+                            subject:
+                              type: string
+                            type:
+                              type: string
+                            status:
+                              type: string
+                            sent_at:
+                              type: string
+                            created_at:
+                              type: string
+                      pagination:
+                        type: object
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+  /notification/send:
+    post:
+      summary: Send Email Notification (Kirim Notifikasi Email)
+      description: Endpoint internal untuk mengirim email, dipanggil oleh modul lain.
+      tags:
+        - Modul 4 - Penerbit, Pra-Cetak, & Monitoring (Kelompok 1)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - to
+                - subject
+                - body
+                - type
+              properties:
+                to:
+                  type: string
+                  format: email
+                subject:
+                  type: string
+                body:
+                  type: string
+                type:
+                  type: string
+                  enum: [akun, kontrak, upload_draft, plotting, hasil_review, pracetak, approved, revised, reminder]
+      responses:
+        '200':
+          description: Email berhasil dikirim.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponseObject'
+        '400':
+          description: Data tidak valid
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+  /reminder/trigger:
+    post:
+      summary: Trigger Reminder Manually (Trigger Reminder Manual)
+      description: Menjalankan cron reminder secara manual (cek deadline H-3 s.d. H).
+      tags:
+        - Modul 4 - Penerbit, Pra-Cetak, & Monitoring (Kelompok 1)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Reminder berhasil diproses.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      reminders_sent:
+                        type: integer
+                      reminders_failed:
+                        type: integer
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          description: Success message. (Pesan sukses.)
+          example: "Operation successful. (Operasi berhasil.)"
+        data:
+          type: object
+          nullable: true
+          example: null
+    SuccessResponseObject:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "Data retrieved successfully. (Data berhasil diambil.)"
+        data:
+          type: object
+          example: { id: 1, status: "review_completed" }
+    SuccessResponseList:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "List retrieved successfully. (Daftar berhasil diambil.)"
+        data:
+          type: array
+          items:
+            type: object
+          example: [ { id: 1, title: "Manuskrip A" } ]
+    ValidationErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+        data:
+          type: object
+          properties:
+            errors:
+              type: object
+    Role:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        is_active:
+          type: boolean
+        role:
+          $ref: '#/components/schemas/Role'
+        created_at:
+          type: string
+          format: date-time
+    AuthorConfirmation:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        institution:
+          type: string
+        phone:
+          type: string
+        book_title:
+          type: string
+        book_type:
+          type: string
+        status:
+          type: string
+        created_at:
+          type: string
+
+  responses:
+    UnauthorizedError:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              message:
+                type: string
+                example: "Unauthenticated."
+    ForbiddenError:
+      description: Forbidden
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              message:
+                type: string
+                example: "Access denied."
+    NotFoundError:
+      description: Not Found
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              message:
+                type: string
+                example: "Resource not found."
+    ValidationError:
+      description: Validation Error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ValidationErrorResponse'
