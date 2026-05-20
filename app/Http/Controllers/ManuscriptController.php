@@ -4,13 +4,53 @@ namespace App\Http\Controllers;
 
 use App\Models\Manuscript;
 use App\Models\ManuscriptFile;
+use App\Models\AuthorDocument;
 use Illuminate\Http\Request;
 
 class ManuscriptController extends Controller
 {
+    // FITUR 3: DASBOR PENULIS
+    public function dashboard()
+    {
+        try {
+            // SEMENTARA: Hardcode author_id = 1 karena fitur Login (Modul 1)
+            $authorId = 1;
+            // Nama disesuaikan dengan data dummy di tabel users yang kita buat sebelumnya
+            $authorName = "Dummy Penulis"; 
+
+            // Ambil 1 naskah yang paling terakhir dibuat sebagai "active_manuscript"
+            $activeManuscript = Manuscript::where('author_id', $authorId)
+                                ->latest()
+                                ->first();
+
+            // Ambil seluruh riwayat naskah milik penulis ini
+            $history = Manuscript::where('author_id', $authorId)
+                        ->orderBy('created_at', 'desc')
+                        ->get();
+
+            // Response
+            return response()->json([
+                'success' => true,
+                'message' => 'Data dasbor berhasil diambil.',
+                'data'    => [
+                    'author_name'       => $authorName,
+                    'active_manuscript' => $activeManuscript,
+                    'history'           => $history
+                ]
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengambil data dasbor: ' . $e->getMessage(),
+                'data'    => null
+            ], 500);
+        }
+    }
+
+    // FITUR 1: UPLOAD DRAFT AWAL
     public function uploadDraft(Request $request)
     {
-        // Validasi Input Sesuai api-contract-project.yaml
         $request->validate([
             'file_draft'  => 'required|file|mimes:pdf,docx|max:5120',
             'title'       => 'required|string|max:255',
@@ -23,7 +63,6 @@ class ManuscriptController extends Controller
         try {
             $bookTypeDB = $request->book_type === 'ajar' ? 'Buku Ajar' : 'Buku Referensi';
 
-            // Simpan Data Teks ke Tabel manuscripts
             $manuscript = Manuscript::create([
                 'author_id'     => 1, 
                 'title'         => $request->title,
@@ -34,12 +73,10 @@ class ManuscriptController extends Controller
                 'status'        => 'initial_draft_uploaded',
             ]);
 
-            // Simpan File Fisik ke Storage Lokal
             $file = $request->file('file_draft');
             $fileName = time() . '_draft_' . $file->getClientOriginalName();
             $filePath = $file->storeAs('drafts', $fileName, 'public');
 
-            // Catat File ke Tabel manuscript_files (Relasi)
             ManuscriptFile::create([
                 'manuscript_id' => $manuscript->id,
                 'file_path'     => $filePath,
@@ -47,7 +84,6 @@ class ManuscriptController extends Controller
                 'version'       => 1,
             ]);
 
-            // Kembalikan Response Sesuai Standar Integrasi Modul
             return response()->json([
                 'success' => true,
                 'message' => 'Operasi manuskrip berhasil dilakukan.',
@@ -58,6 +94,43 @@ class ManuscriptController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal mengunggah draft: ' . $e->getMessage(),
+                'data'    => null
+            ], 500);
+        }
+    }
+
+    // FITUR 2: UPLOAD DOKUMEN ADMINISTRASI
+    public function uploadDocument(Request $request, $manuscriptId)
+    {
+        $request->validate([
+            'document_file' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'document_type' => 'required|in:surat_pernyataan,scan_bermeterai'
+        ]);
+
+        try {
+            $docTypeDB = $request->document_type === 'scan_bermeterai' ? 'scan_bermeteri' : 'surat_pernyataan';
+
+            $file = $request->file('document_file');
+            $fileName = time() . '_' . $docTypeDB . '_ms' . $manuscriptId . '.' . $file->getClientOriginalExtension();
+            $filePath = $file->storeAs('documents', $fileName, 'public');
+
+            $document = AuthorDocument::create([
+                'manuscript_id' => $manuscriptId,
+                'document_type' => $docTypeDB,
+                'file_path'     => $filePath,
+                'is_valid'      => 0 
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Dokumen administrasi berhasil diunggah.',
+                'data'    => $document
+            ], 201);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengunggah dokumen: ' . $e->getMessage(),
                 'data'    => null
             ], 500);
         }
