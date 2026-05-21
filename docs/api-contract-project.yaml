@@ -53,7 +53,7 @@ paths:
                   format: password
                   example: "admin123"
       responses:
-        '200':
+        "200":
           description: Login berhasil.
           content:
             application/json:
@@ -82,10 +82,10 @@ paths:
                             type: string
                           role:
                             type: string
-        '401':
-          $ref: '#/components/responses/UnauthorizedError'
-        '422':
-          $ref: '#/components/responses/ValidationError'
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "422":
+          $ref: "#/components/responses/ValidationError"
   /auth/logout:
     post:
       summary: Logout Pengguna
@@ -94,14 +94,14 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        '200':
+        "200":
           description: Logout berhasil.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SuccessResponse'
-        '401':
-          $ref: '#/components/responses/UnauthorizedError'
+                $ref: "#/components/schemas/SuccessResponse"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
   /auth/me:
     get:
       summary: Data User yang Sedang Login
@@ -110,7 +110,7 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        '200':
+        "200":
           description: Data user berhasil diambil.
           content:
             application/json:
@@ -120,9 +120,9 @@ paths:
                   success:
                     type: boolean
                   data:
-                    $ref: '#/components/schemas/User'
-        '401':
-          $ref: '#/components/responses/UnauthorizedError'
+                    $ref: "#/components/schemas/User"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
   /admin/users:
     get:
       summary: Daftar Semua User
@@ -137,7 +137,7 @@ paths:
             type: string
             enum: [penulis, reviewer, penerbit]
       responses:
-        '200':
+        "200":
           description: Daftar user berhasil diambil.
           content:
             application/json:
@@ -147,11 +147,11 @@ paths:
                   data:
                     type: array
                     items:
-                      $ref: '#/components/schemas/User'
-        '401':
-          $ref: '#/components/responses/UnauthorizedError'
-        '403':
-          $ref: '#/components/responses/ForbiddenError'
+                      $ref: "#/components/schemas/User"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
     post:
       summary: Buat Akun Reviewer atau Penerbit
       tags:
@@ -176,18 +176,18 @@ paths:
                 password:
                   type: string
       responses:
-        '201':
+        "201":
           description: Akun berhasil dibuat.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SuccessResponseObject'
-        '401':
-          $ref: '#/components/responses/UnauthorizedError'
-        '403':
-          $ref: '#/components/responses/ForbiddenError'
-        '422':
-          $ref: '#/components/responses/ValidationError'
+                $ref: "#/components/schemas/SuccessResponseObject"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+        "422":
+          $ref: "#/components/responses/ValidationError"
   /admin/users/{id}:
     put:
       summary: Update Data User
@@ -215,20 +215,20 @@ paths:
                 password:
                   type: string
       responses:
-        '200':
+        "200":
           description: User berhasil diupdate.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SuccessResponseObject'
-        '401':
-          $ref: '#/components/responses/UnauthorizedError'
-        '403':
-          $ref: '#/components/responses/ForbiddenError'
-        '404':
-          $ref: '#/components/responses/NotFoundError'
-        '422':
-          $ref: '#/components/responses/ValidationError'
+                $ref: "#/components/schemas/SuccessResponseObject"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+        "422":
+          $ref: "#/components/responses/ValidationError"
     delete:
       summary: Hapus User
       tags:
@@ -242,18 +242,18 @@ paths:
           schema:
             type: integer
       responses:
-        '200':
+        "200":
           description: User berhasil dihapus.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SuccessResponse'
-        '401':
-          $ref: '#/components/responses/UnauthorizedError'
-        '403':
-          $ref: '#/components/responses/ForbiddenError'
-        '404':
-          $ref: '#/components/responses/NotFoundError'
+                $ref: "#/components/schemas/SuccessResponse"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
   /author-confirmations:
     post:
       summary: Submit Form Kesediaan Penulis
@@ -282,14 +282,14 @@ paths:
                   type: string
                   enum: [ajar, referensi]
       responses:
-        '201':
+        "201":
           description: Form kesediaan berhasil disubmit.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SuccessResponse'
-        '422':
-          $ref: '#/components/responses/ValidationError'
+                $ref: "#/components/schemas/SuccessResponse"
+        "422":
+          $ref: "#/components/responses/ValidationError"
     get:
       summary: Daftar Form Kesediaan (Admin)
       tags:
@@ -303,7 +303,7 @@ paths:
             type: string
             enum: [pending, processed]
       responses:
-        '200':
+        "200":
           description: Daftar form kesediaan berhasil diambil.
           content:
             application/json:
@@ -313,11 +313,11 @@ paths:
                   data:
                     type: array
                     items:
-                      $ref: '#/components/schemas/AuthorConfirmation'
-        '401':
-          $ref: '#/components/responses/UnauthorizedError'
-        '403':
-          $ref: '#/components/responses/ForbiddenError'
+                      $ref: "#/components/schemas/AuthorConfirmation"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
 
   # ==========================================
   # MODUL 2: PENULIS & MANAJEMEN NASKAH (KLP 3)
@@ -330,14 +330,14 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        '200':
+        "200":
           description: Data dasbor berhasil diambil.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SuccessResponseObject'
-        '401':
-          $ref: '#/components/responses/UnauthorizedError'
+                $ref: "#/components/schemas/SuccessResponseObject"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
   /author/manuscripts/drafts:
     post:
       summary: Upload Initial Draft (Unggah Draft Awal)
@@ -373,14 +373,14 @@ paths:
                 category:
                   type: string
       responses:
-        '201':
+        "201":
           description: Draft awal berhasil diunggah.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SuccessResponseObject'
-        '401':
-          $ref: '#/components/responses/UnauthorizedError'
+                $ref: "#/components/schemas/SuccessResponseObject"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
   /author/manuscripts/{manuscriptId}/metadata:
     put:
       summary: Update Manuscript Metadata (Perbarui Metadata Naskah)
@@ -408,14 +408,14 @@ paths:
                 category:
                   type: string
       responses:
-        '200':
+        "200":
           description: Metadata berhasil diperbarui.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SuccessResponseObject'
-        '404':
-          $ref: '#/components/responses/NotFoundError'
+                $ref: "#/components/schemas/SuccessResponseObject"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
   /author/manuscripts/{manuscriptId}/reviews:
     get:
       summary: Get Manuscript Reviews (Lihat Hasil Review)
@@ -430,16 +430,16 @@ paths:
           schema:
             type: integer
       responses:
-        '200':
+        "200":
           description: Hasil review berhasil diambil.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SuccessResponseList'
-        '403':
-          $ref: '#/components/responses/ForbiddenError'
-        '404':
-          $ref: '#/components/responses/NotFoundError'
+                $ref: "#/components/schemas/SuccessResponseList"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
   /author/manuscripts/{manuscriptId}/revisions:
     post:
       summary: Upload Revision (Unggah Revisi Naskah)
@@ -468,14 +468,14 @@ paths:
                 revision_note:
                   type: string
       responses:
-        '201':
+        "201":
           description: Revisi naskah berhasil diunggah.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SuccessResponseObject'
-        '404':
-          $ref: '#/components/responses/NotFoundError'
+                $ref: "#/components/schemas/SuccessResponseObject"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
   /author/manuscripts/{manuscriptId}/documents:
     post:
       summary: Upload Administrative Document (Unggah Dokumen Administrasi)
@@ -508,14 +508,14 @@ paths:
                     - surat_pernyataan
                     - scan_bermeterai
       responses:
-        '201':
+        "201":
           description: Dokumen administrasi berhasil diunggah.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SuccessResponseObject'
-        '404':
-          $ref: '#/components/responses/NotFoundError'
+                $ref: "#/components/schemas/SuccessResponseObject"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
 
   # ==========================================
   # MODUL 3: REVIEWER & PROSES REVIEW (KLP 2)
@@ -528,14 +528,14 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        '200':
+        "200":
           description: Daftar naskah belum diplot berhasil diambil.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SuccessResponseList'
-        '401':
-          $ref: '#/components/responses/UnauthorizedError'
+                $ref: "#/components/schemas/SuccessResponseList"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
   /admin/manuscripts/{manuscriptId}/assign-reviewer:
     post:
       summary: Assign Reviewer to Manuscript (Tugaskan Reviewer pada Naskah)
@@ -569,14 +569,14 @@ paths:
                   description: Review deadline date. (Tanggal tenggat waktu review.)
                   example: "2026-05-20"
       responses:
-        '200':
+        "200":
           description: Reviewer berhasil ditugaskan.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SuccessResponse'
-        '404':
-          $ref: '#/components/responses/NotFoundError'
+                $ref: "#/components/schemas/SuccessResponse"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
   /reviewer/dashboard:
     get:
       summary: Reviewer Dashboard (Dasbor Reviewer)
@@ -585,12 +585,12 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        '200':
+        "200":
           description: Data dasbor berhasil diambil.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SuccessResponseList'
+                $ref: "#/components/schemas/SuccessResponseList"
   /reviewer/manuscripts/{manuscriptId}:
     get:
       summary: Get Manuscript Details for Review (Dapatkan Detail Naskah untuk Direview)
@@ -605,14 +605,14 @@ paths:
           schema:
             type: integer
       responses:
-        '200':
+        "200":
           description: Detail naskah berhasil diambil.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SuccessResponseObject'
-        '403':
-          $ref: '#/components/responses/ForbiddenError'
+                $ref: "#/components/schemas/SuccessResponseObject"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
   /reviewer/manuscripts/{manuscriptId}/rubric:
     get:
       summary: Get Review Rubric (Dapatkan Rubrik Penilaian)
@@ -627,12 +627,12 @@ paths:
           schema:
             type: integer
       responses:
-        '200':
+        "200":
           description: Rubrik berhasil diambil.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SuccessResponseList'
+                $ref: "#/components/schemas/SuccessResponseList"
   /reviewer/manuscripts/{manuscriptId}/review:
     post:
       summary: Submit Review Result (Kirim Hasil Review)
@@ -676,12 +676,12 @@ paths:
                   description: Narrative feedback from reviewer. (Catatan naratif dari reviewer.)
                   example: "Secara keseluruhan bagus, namun pada bab 2 perlu ditambahkan referensi jurnal terbaru."
       responses:
-        '200':
+        "200":
           description: Review berhasil dikirim.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SuccessResponseObject'
+                $ref: "#/components/schemas/SuccessResponseObject"
   /manuscripts/{manuscriptId}/compiled-reviews:
     get:
       summary: Get Compiled Reviews (Dapatkan Kompilasi Review)
@@ -696,31 +696,32 @@ paths:
           schema:
             type: integer
       responses:
-        '200':
+        "200":
           description: Kompilasi review berhasil diambil.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SuccessResponseObject'
+                $ref: "#/components/schemas/SuccessResponseObject"
 
+    # ==========================================
+  # MODUL 4: PENERBIT, PRA-CETAK & MONITORING (KLP 1) - DENGAN HYPERMEDIA
   # ==========================================
-  # MODUL 4: PENERBIT, PRA-CETAK & MONITORING (KLP 1)
-  # ==========================================
+
   /publisher/dashboard:
     get:
       summary: Publisher Dashboard (Dasbor Penerbit)
       description: |
         Menampilkan ringkasan tugas penerbit:
-        - jumlah naskah pra-cetak
-        - jumlah approved bulan ini
+        - jumlah naskah pra-cetak (status 'preprint')
+        - jumlah approved bulan ini (dari publisher_decisions)
         - jumlah revised bulan ini
-        - daftar 5 naskah pra-cetak terbaru
+        - daftar 5 naskah pra-cetak terbaru dengan tautan
       tags:
         - Modul 4 - Penerbit, Pra-Cetak, & Monitoring (Kelompok 1)
       security:
         - bearerAuth: []
       responses:
-        '200':
+        "200":
           description: Data dashboard penerbit berhasil diambil.
           content:
             application/json:
@@ -729,6 +730,7 @@ paths:
                 properties:
                   success:
                     type: boolean
+                    example: true
                   data:
                     type: object
                     properties:
@@ -752,15 +754,42 @@ paths:
                             submitted_at:
                               type: string
                               format: date-time
-        '401':
-          $ref: '#/components/responses/UnauthorizedError'
-        '403':
-          $ref: '#/components/responses/ForbiddenError'
+                            _links:
+                              type: object
+                              properties:
+                                check_detail:
+                                  type: object
+                                  properties:
+                                    href:
+                                      type: string
+                                      example: "/api/publisher/check/{id}"
+                                    method:
+                                      type: string
+                                      example: GET
+                  _links:
+                    type: object
+                    properties:
+                      preprint_list:
+                        type: object
+                        properties:
+                          href:
+                            type: string
+                            example: "/api/publisher/preprint-list"
+                          method:
+                            type: string
+                            example: GET
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+
   /publisher/preprint-list:
     get:
-      summary: Get Preprint Manuscripts List (Daftar Naskah Pra-Cetak)
+      summary: Get Preprint Manuscripts List
       description: |
-        Mengembalikan daftar naskah status `preprint` dengan pagination.
+        Mengembalikan daftar naskah dengan status `preprint` (berdasarkan manuscripts.status).
+        Data kelengkapan diambil dari tabel `publisher_checks`.
+        Mendukung pagination dan filter status kelengkapan.
       tags:
         - Modul 4 - Penerbit, Pra-Cetak, & Monitoring (Kelompok 1)
       security:
@@ -782,7 +811,7 @@ paths:
             type: string
             enum: [pending, partial, complete]
       responses:
-        '200':
+        "200":
           description: Daftar naskah pra-cetak berhasil diambil.
           content:
             application/json:
@@ -813,6 +842,18 @@ paths:
                               type: boolean
                             admin_checked:
                               type: boolean
+                            _links:
+                              type: object
+                              properties:
+                                check_detail:
+                                  type: object
+                                  properties:
+                                    href:
+                                      type: string
+                                      example: "/api/publisher/check/{id}"
+                                    method:
+                                      type: string
+                                      example: GET
                       pagination:
                         type: object
                         properties:
@@ -824,11 +865,27 @@ paths:
                             type: integer
                           total_pages:
                             type: integer
-        '401':
-          $ref: '#/components/responses/UnauthorizedError'
+                  _links:
+                    type: object
+                    properties:
+                      dashboard:
+                        type: object
+                        properties:
+                          href:
+                            type: string
+                            example: "/api/publisher/dashboard"
+                          method:
+                            type: string
+                            example: GET
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+
   /publisher/check/{manuscriptId}:
     get:
-      summary: Get Preprint Check Data (Ambil Data Pemeriksaan Pra-Cetak)
+      summary: Get Preprint Check Data
+      description: |
+        Mengembalikan data naskah (dari manuscripts, users, manuscript_files) 
+        dan hasil pemeriksaan (dari publisher_checks) jika sudah ada.
       tags:
         - Modul 4 - Penerbit, Pra-Cetak, & Monitoring (Kelompok 1)
       security:
@@ -840,7 +897,7 @@ paths:
           schema:
             type: integer
       responses:
-        '200':
+        "200":
           description: Data pemeriksaan berhasil diambil.
           content:
             application/json:
@@ -881,12 +938,37 @@ paths:
                             type: boolean
                           notes:
                             type: string
-        '401':
-          $ref: '#/components/responses/UnauthorizedError'
-        '404':
-          $ref: '#/components/responses/NotFoundError'
+                  _links:
+                    type: object
+                    properties:
+                      save_check:
+                        type: object
+                        properties:
+                          href:
+                            type: string
+                            example: "/api/publisher/check/{manuscriptId}"
+                          method:
+                            type: string
+                            example: POST
+                      make_decision:
+                        type: object
+                        properties:
+                          href:
+                            type: string
+                            example: "/api/publisher/decision"
+                          method:
+                            type: string
+                            example: POST
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+
     post:
-      summary: Save Preprint Check (Simpan Hasil Pemeriksaan Pra-Cetak)
+      summary: Save Preprint Check
+      description: |
+        Menyimpan hasil pemeriksaan kelengkapan (cover, halaman, dokumen admin) 
+        ke tabel `publisher_checks`. Jika sudah ada, akan diupdate.
       tags:
         - Modul 4 - Penerbit, Pra-Cetak, & Monitoring (Kelompok 1)
       security:
@@ -917,22 +999,51 @@ paths:
                 notes:
                   type: string
       responses:
-        '200':
+        "200":
           description: Pemeriksaan berhasil disimpan.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SuccessResponse'
-        '401':
-          $ref: '#/components/responses/UnauthorizedError'
-        '404':
-          $ref: '#/components/responses/NotFoundError'
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  _links:
+                    type: object
+                    properties:
+                      check_detail:
+                        type: object
+                        properties:
+                          href:
+                            type: string
+                            example: "/api/publisher/check/{manuscriptId}"
+                          method:
+                            type: string
+                            example: GET
+                      make_decision:
+                        type: object
+                        properties:
+                          href:
+                            type: string
+                            example: "/api/publisher/decision"
+                          method:
+                            type: string
+                            example: POST
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+
   /publisher/decision:
     post:
-      summary: Publisher Decision (Keputusan Penerbit)
+      summary: Publisher Decision
       description: |
-        Memberikan keputusan akhir penerbit: approved atau revised.
-        Jika revised, wajib menyertakan revision_notes.
+        Memberikan keputusan akhir penerbit (approved / revised).
+        Data disimpan di tabel `publisher_decisions`.
+        Wajib menyertakan `check_id` (foreign key ke publisher_checks) 
+        yang diperoleh dari pemeriksaan sebelumnya.
       tags:
         - Modul 4 - Penerbit, Pra-Cetak, & Monitoring (Kelompok 1)
       security:
@@ -944,42 +1055,85 @@ paths:
             schema:
               type: object
               required:
-                - manuscript_id
+                - check_id
                 - decision
               properties:
-                manuscript_id:
+                check_id:
                   type: integer
+                  description: ID dari record publisher_checks yang terkait.
                 decision:
                   type: string
                   enum: [approved, revised]
                 revision_notes:
                   type: string
+                  description: Wajib diisi jika decision = revised.
       responses:
-        '200':
+        "200":
           description: Keputusan berhasil disimpan.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SuccessResponseObject'
-        '400':
-          description: Bad request
-        '401':
-          $ref: '#/components/responses/UnauthorizedError'
-        '403':
-          $ref: '#/components/responses/ForbiddenError'
-        '404':
-          $ref: '#/components/responses/NotFoundError'
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      decision_id:
+                        type: integer
+                      status:
+                        type: string
+                  _links:
+                    type: object
+                    properties:
+                      dashboard:
+                        type: object
+                        properties:
+                          href:
+                            type: string
+                            example: "/api/publisher/dashboard"
+                          method:
+                            type: string
+                            example: GET
+                      preprint_list:
+                        type: object
+                        properties:
+                          href:
+                            type: string
+                            example: "/api/publisher/preprint-list"
+                          method:
+                            type: string
+                            example: GET
+        "400":
+          description: Bad request (misal revision_notes tidak diisi)
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+
   /admin/dashboard-stats:
     get:
-      summary: Admin Dashboard Statistics (Statistik Dasbor Admin)
+      summary: Admin Dashboard Statistics
       description: |
-        Ringkasan statistik untuk admin: jumlah penulis, kontrak valid, draft masuk, review berjalan, revisi, pra-cetak, siap cetak.
+        Ringkasan statistik yang dihitung dari berbagai tabel:
+        - total_penulis: count users where role = 'penulis'
+        - total_kontrak_valid: count contracts status 'validated'
+        - total_draft_masuk: count manuscripts status 'initial_draft_uploaded'
+        - total_review_berjalan: count review_submissions status 'in_progress'
+        - total_revisi: count manuscripts status 'revision_uploaded'
+        - total_pracetak: count manuscripts status 'preprint'
+        - total_siap_cetak: count manuscripts status 'ready_to_print'
       tags:
         - Modul 4 - Penerbit, Pra-Cetak, & Monitoring (Kelompok 1)
       security:
         - bearerAuth: []
       responses:
-        '200':
+        "200":
           description: Statistik berhasil diambil.
           content:
             application/json:
@@ -1005,15 +1159,30 @@ paths:
                         type: integer
                       total_siap_cetak:
                         type: integer
-        '401':
-          $ref: '#/components/responses/UnauthorizedError'
-        '403':
-          $ref: '#/components/responses/ForbiddenError'
+                  _links:
+                    type: object
+                    properties:
+                      notification_logs:
+                        type: object
+                        properties:
+                          href:
+                            type: string
+                            example: "/api/admin/notification-logs"
+                          method:
+                            type: string
+                            example: GET
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+
   /admin/notification-logs:
     get:
-      summary: Get Notification Logs (Log Notifikasi Email)
+      summary: Get Notification Logs
       description: |
-        Admin melihat riwayat pengiriman email dengan filter dan pagination.
+        Riwayat pengiriman email yang tersimpan di tabel `notification_log`.
+        Data `type` sebenarnya berasal dari `notification_templates.event_type` melalui join.
+        Mendukung filter dan pagination.
       tags:
         - Modul 4 - Penerbit, Pra-Cetak, & Monitoring (Kelompok 1)
       security:
@@ -1033,14 +1202,26 @@ paths:
           in: query
           schema:
             type: string
-            enum: [akun, kontrak, upload_draft, plotting, hasil_review, pracetak, approved, revised, reminder]
+            enum:
+              [
+                account_created,
+                contract_validated,
+                draft_uploaded,
+                review_assigned,
+                review_completed,
+                revision_requested,
+                preprint_entered,
+                publisher_approved,
+                publisher_revised,
+                deadline_reminder,
+              ]
         - name: status
           in: query
           schema:
             type: string
             enum: [pending, sent, failed]
       responses:
-        '200':
+        "200":
           description: Log notifikasi berhasil diambil.
           content:
             application/json:
@@ -1061,9 +1242,9 @@ paths:
                               type: integer
                             recipient:
                               type: string
-                            subject:
-                              type: string
                             type:
+                              type: string
+                            subject:
                               type: string
                             status:
                               type: string
@@ -1071,16 +1252,44 @@ paths:
                               type: string
                             created_at:
                               type: string
+                            _links:
+                              type: object
+                              properties:
+                                self:
+                                  type: object
+                                  properties:
+                                    href:
+                                      type: string
+                                      example: "/api/admin/notification-logs/{id}"
+                                    method:
+                                      type: string
+                                      example: GET
                       pagination:
                         type: object
-        '401':
-          $ref: '#/components/responses/UnauthorizedError'
-        '403':
-          $ref: '#/components/responses/ForbiddenError'
+                  _links:
+                    type: object
+                    properties:
+                      dashboard:
+                        type: object
+                        properties:
+                          href:
+                            type: string
+                            example: "/api/admin/dashboard-stats"
+                          method:
+                            type: string
+                            example: GET
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+
   /notification/send:
     post:
-      summary: Send Email Notification (Kirim Notifikasi Email)
-      description: Endpoint internal untuk mengirim email, dipanggil oleh modul lain.
+      summary: Send Email Notification
+      description: |
+        Endpoint internal untuk mengirim email.
+        Request berisi `type` (event_type) yang akan dicocokkan dengan `notification_templates`.
+        Setelah berhasil, log disimpan di `notification_log`.
       tags:
         - Modul 4 - Penerbit, Pra-Cetak, & Monitoring (Kelompok 1)
       security:
@@ -1106,30 +1315,62 @@ paths:
                   type: string
                 type:
                   type: string
-                  enum: [akun, kontrak, upload_draft, plotting, hasil_review, pracetak, approved, revised, reminder]
+                  enum:
+                    [
+                      account_created,
+                      contract_validated,
+                      draft_uploaded,
+                      review_assigned,
+                      review_completed,
+                      revision_requested,
+                      preprint_entered,
+                      publisher_approved,
+                      publisher_revised,
+                      deadline_reminder,
+                    ]
       responses:
-        '200':
+        "200":
           description: Email berhasil dikirim.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SuccessResponseObject'
-        '400':
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  _links:
+                    type: object
+                    properties:
+                      notification_logs:
+                        type: object
+                        properties:
+                          href:
+                            type: string
+                            example: "/api/admin/notification-logs"
+                          method:
+                            type: string
+                            example: GET
+        "400":
           description: Data tidak valid
-        '401':
-          $ref: '#/components/responses/UnauthorizedError'
-        '403':
-          $ref: '#/components/responses/ForbiddenError'
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+
   /reminder/trigger:
     post:
-      summary: Trigger Reminder Manually (Trigger Reminder Manual)
-      description: Menjalankan cron reminder secara manual (cek deadline H-3 s.d. H).
+      summary: Trigger Reminder Manually
+      description: |
+        Menjalankan cron reminder secara manual.
+        Membaca tabel `deadlines` dan `reminder_logs` untuk mengirim pengingat.
       tags:
         - Modul 4 - Penerbit, Pra-Cetak, & Monitoring (Kelompok 1)
       security:
         - bearerAuth: []
       responses:
-        '200':
+        "200":
           description: Reminder berhasil diproses.
           content:
             application/json:
@@ -1145,11 +1386,22 @@ paths:
                         type: integer
                       reminders_failed:
                         type: integer
-        '401':
-          $ref: '#/components/responses/UnauthorizedError'
-        '403':
-          $ref: '#/components/responses/ForbiddenError'
-
+                  _links:
+                    type: object
+                    properties:
+                      dashboard:
+                        type: object
+                        properties:
+                          href:
+                            type: string
+                            example: "/api/admin/dashboard-stats"
+                          method:
+                            type: string
+                            example: GET
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
 components:
   securitySchemes:
     bearerAuth:
@@ -1197,7 +1449,7 @@ components:
           type: array
           items:
             type: object
-          example: [ { id: 1, title: "Manuskrip A" } ]
+          example: [{ id: 1, title: "Manuskrip A" }]
     ValidationErrorResponse:
       type: object
       properties:
@@ -1230,7 +1482,7 @@ components:
         is_active:
           type: boolean
         role:
-          $ref: '#/components/schemas/Role'
+          $ref: "#/components/schemas/Role"
         created_at:
           type: string
           format: date-time
@@ -1301,4 +1553,4 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ValidationErrorResponse'
+            $ref: "#/components/schemas/ValidationErrorResponse"
