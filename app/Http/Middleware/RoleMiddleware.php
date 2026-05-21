@@ -10,8 +10,24 @@ class RoleMiddleware
 {
     public function handle(Request $request, Closure $next, ...$roles): Response
     {
-        // Cek apakah user sudah login dan role-nya ada di dalam daftar yang diizinkan
-        if (! $request->user() || ! in_array($request->user()->role->name, $roles)) {
+        $user = $request->user();
+
+        if (! $user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Access denied.'
+            ], 403);
+        }
+
+        // Get role name safely (fallback to DB if the User->role relationship isn't built yet)
+        $roleName = null;
+        if (method_exists($user, 'role') && $user->role) {
+            $roleName = $user->role->name;
+        } elseif (isset($user->role_id)) {
+            $roleName = \Illuminate\Support\Facades\DB::table('roles')->where('id', $user->role_id)->value('name');
+        }
+
+        if (! in_array($roleName, $roles)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Access denied.'

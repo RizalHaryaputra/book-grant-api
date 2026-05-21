@@ -104,7 +104,7 @@ class AdminManuscriptController extends Controller
     public function assignReviewer(AssignReviewerRequest $request, int $manuscriptId): JsonResponse
     {
         $manuscript = Manuscript::findOrFail($manuscriptId);
-        
+
         $validated = $request->validated();
 
         // Prevent duplicate assignment

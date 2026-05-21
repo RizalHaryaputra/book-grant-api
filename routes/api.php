@@ -11,11 +11,30 @@ use App\Http\Controllers\Api\Module3\ReviewController;
 |--------------------------------------------------------------------------
 */
 
+// --- TEMPORARY MOCK AUTH MIDDLEWARE FOR TESTING ---
+// Hotswap: Comment this block and uncomment the REAL MIDDLEWARE block below when login is ready.
+if (!class_exists('MockAuthMiddleware')) {
+    class MockAuthMiddleware {
+        public function handle($request, $next) {
+            // 1 = Admin, 2 = Reviewer, 3 = Author, 4 = Editor
+            // Change this ID to test different roles
+            $user = \App\Models\User::find(1);
+            if ($user) {
+                auth()->setUser($user);
+                $request->setUserResolver(fn() => $user);
+            }
+            return $next($request);
+        }
+    }
+}
+Route::middleware(MockAuthMiddleware::class)->group(function () {
+
+// --- REAL MIDDLEWARE ---
 // Route yang memerlukan autentikasi
-Route::middleware(['auth:sanctum'])->group(function () {
+// Route::middleware(['auth:sanctum'])->group(function () {
 
     // ---------- ADMIN ONLY (role_id = 1) ----------
-    Route::prefix('admin')->middleware('role:1')->group(function () {
+    Route::prefix('admin')->middleware('role:admin')->group(function () {
         Route::prefix('manuscripts')->group(function () {
             Route::get('/', [AdminManuscriptController::class, 'index']);
             Route::get('/unassigned', [AdminManuscriptController::class, 'getUnassigned']);
@@ -26,7 +45,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     });
 
     // ---------- REVIEWER ONLY (role_id = 2) ----------
-    Route::prefix('reviewer')->middleware('role:2')->group(function () {
+    Route::prefix('reviewer')->middleware('role:reviewer')->group(function () {
         Route::get('/dashboard', [ReviewerManuscriptController::class, 'dashboard']);
         Route::prefix('manuscripts/{manuscriptId}')->group(function () {
             Route::get('/', [ReviewerManuscriptController::class, 'show']);
@@ -38,6 +57,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // ---------- COMPILED REVIEWS (bisa diakses oleh admin, reviewer, dan author) ----------
     // Author perlu melihat hasil review untuk merevisi naskah.
     Route::get('/manuscripts/{manuscriptId}/compiled-reviews', [ReviewController::class, 'getCompiledReviews'])
-        ->middleware('role:1,2,3'); // role 1=admin, 2=reviewer, 3=author
+        ->middleware('role:admin,reviewer,author');
 
 });
