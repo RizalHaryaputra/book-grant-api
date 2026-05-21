@@ -41,11 +41,8 @@ paths:
               type: object
               required: [email, password]
               properties:
-                email:
-                  type: string
-                  format: email
-                password:
-                  type: string
+                email: { type: string, format: email }
+                password: { type: string }
       responses:
         '200':
           description: Login berhasil.
@@ -194,10 +191,10 @@ paths:
       summary: Submit Form Kesediaan Penulis (Calon Penulis)
       description: |
         **Endpoint publik (tanpa login).**  
-        Setelah data disimpan ke tabel `authors`, sistem **otomatis**:
+        Setelah data disimpan ke tabel `author_profiles`, sistem **otomatis**:
         1. Membuat akun penulis di tabel `users` dengan role `penulis`.
-        2. Menghasilkan password acak (contoh: 8 karakter alfanumerik).
-        3. Menyimpan `user_id` yang baru dibuat ke tabel `authors`.
+        2. Menghasilkan password acak (8 karakter alfanumerik).
+        3. Menyimpan `user_id` yang baru dibuat ke `author_profiles`.
         4. Memanggil endpoint `/notification/send` (Modul 4) untuk mengirim email berisi username (email) dan password ke penulis.
         5. Mengubah status author menjadi `account_created`.
 
@@ -219,6 +216,7 @@ paths:
                 book_title: { type: string }
                 book_type: { type: string, enum: [buku ajar, buku referensi] }
                 ai_ethics_agreed: { type: boolean, default: true }
+                willingness_statement: { type: boolean, default: true, description: "Pernyataan kesediaan mengikuti proses hibah" }
       responses:
         '201':
           description: Form kesediaan diproses, akun penulis berhasil dibuat, dan email dikirim.
@@ -257,10 +255,10 @@ paths:
           in: query
           schema:
             type: string
-            enum: [registered, account_created, contract_uploaded, contract_rejected]
+            enum: [registered, account_created, contract_uploaded, contract_validated, contract_rejected]
       responses:
         '200':
-          description: Daftar form kesediaan berhasil diambil.
+          description: Daftar author profiles berhasil diambil (dengan join user untuk name/email).
           content:
             application/json:
               schema:
@@ -310,7 +308,7 @@ paths:
           schema: { type: integer }
       responses:
         '200':
-          description: Data author berhasil diambil.
+          description: Data author berhasil diambil (termasuk name dan email dari user).
           content:
             application/json:
               schema:
@@ -342,7 +340,7 @@ paths:
                 ai_ethics_agreed: { type: boolean }
                 willingness_statement: { type: boolean }
       responses:
-        '200': { description: Author berhasil diupdate. }
+        '200': { description: Author profile berhasil diupdate. }
 
   /authors/{authorId}/co-authors:
     get:
@@ -429,10 +427,11 @@ paths:
       responses:
         '200': { description: Co-author berhasil dihapus. }
 
-  # -------------------- KONTRAK (TIDAK ADA GENERATE) --------------------
+  # -------------------- KONTRAK (TANPA CONTRACT_NUMBER) --------------------
   /contracts:
     post:
       summary: Upload Contract (Penulis)
+      description: Mengunggah file kontrak (PDF) untuk author profile yang sudah memiliki akun.
       tags:
         - Modul 1 - Fondasi Sistem & Kontrak (Kelompok 4)
       security:
@@ -443,11 +442,10 @@ paths:
           multipart/form-data:
             schema:
               type: object
-              required: [author_profile_id, contract_number, file]
+              required: [author_profile_id, file]
               properties:
                 author_profile_id: { type: integer }
-                contract_number: { type: string }
-                file: { type: string, format: binary }
+                file: { type: string, format: binary, description: "File kontrak (PDF)" }
       responses:
         '201':
           description: Kontrak berhasil diupload. Status author berubah menjadi `contract_uploaded`.
@@ -480,6 +478,7 @@ paths:
                   data: { $ref: '#/components/schemas/Contract' }
     put:
       summary: Update Contract (Revisi)
+      description: Mengganti file kontrak yang sudah diupload sebelumnya.
       tags:
         - Modul 1 - Fondasi Sistem & Kontrak (Kelompok 4)
       security:
@@ -495,8 +494,7 @@ paths:
             schema:
               type: object
               properties:
-                file: { type: string, format: binary }
-                contract_number: { type: string }
+                file: { type: string, format: binary, description: "File kontrak baru (PDF)" }
       responses:
         '200': { description: Kontrak berhasil diupdate. }
     patch:
@@ -550,132 +548,6 @@ paths:
                 properties:
                   success: { type: boolean }
                   data: { type: array, items: { $ref: '#/components/schemas/Contract' } }
-
-  # ==========================================
-  # MODUL 2, 3, 4 (tidak berubah, hanya placeholder)
-  # ==========================================
-  # ... (salin dari file asli untuk path modul 2,3,4)
-  # Karena terlalu panjang, saya asumsikan tetap sama seperti di file Anda.
-  # Untuk keperluan demo, Anda bisa menyalin bagian modul 2,3,4 dari file original.
-
-components:
-  securitySchemes:
-    bearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
-
-  schemas:
-    SuccessResponse:
-      type: object
-      properties:
-        success: { type: boolean, example: true }
-        message: { type: string }
-        data: { type: object, nullable: true }
-
-    SuccessResponseObject:
-      type: object
-      properties:
-        success: { type: boolean, example: true }
-        message: { type: string }
-        data: { type: object }
-
-    Role:
-      type: object
-      properties:
-        id: { type: integer }
-        name: { type: string, enum: [admin, penulis, reviewer, penerbit] }
-
-    User:
-      type: object
-      properties:
-        id: { type: integer }
-        name: { type: string }
-        email: { type: string }
-        is_active: { type: boolean }
-        role: { $ref: '#/components/schemas/Role' }
-        created_at: { type: string, format: date-time }
-
-    Author:
-      type: object
-      properties:
-        id: { type: integer }
-        user_id: { type: integer, nullable: true }
-        name: { type: string }
-        email: { type: string }
-        institution: { type: string }
-        book_title: { type: string }
-        book_type: { type: string, enum: [buku ajar, buku referensi] }
-        ai_ethics_agreed: { type: boolean }
-        willingness_statement: { type: boolean }
-        status:
-          type: string
-          enum: [registered, account_created, contract_uploaded, contract_validated, contract_rejected]
-        created_at: { type: string, format: date-time }
-        updated_at: { type: string, format: date-time }
-
-    CoAuthor:
-      type: object
-      properties:
-        id: { type: integer }
-        author_profile_id: { type: integer }
-        name: { type: string }
-        is_mandatory: { type: boolean }
-        sort_order: { type: integer }
-
-    Contract:
-      type: object
-      properties:
-        id: { type: integer }
-        author_profile_id: { type: integer }
-        contract_number: { type: string }
-        file_url: { type: string }
-        status: { type: string, enum: [uploaded, validated, rejected, revision] }
-        rejection_reason: { type: string, nullable: true }
-        uploaded_at: { type: string, format: date-time }
-        validated_at: { type: string, format: date-time, nullable: true }
-
-  responses:
-    UnauthorizedError:
-      description: Unauthorized
-      content:
-        application/json:
-          schema:
-            type: object
-            properties:
-              success: { type: boolean, example: false }
-              message: { type: string, example: "Unauthenticated." }
-    ForbiddenError:
-      description: Forbidden
-      content:
-        application/json:
-          schema:
-            type: object
-            properties:
-              success: { type: boolean, example: false }
-              message: { type: string, example: "Access denied." }
-    NotFoundError:
-      description: Not Found
-      content:
-        application/json:
-          schema:
-            type: object
-            properties:
-              success: { type: boolean, example: false }
-              message: { type: string, example: "Resource not found." }
-    ValidationError:
-      description: Validation Error
-      content:
-        application/json:
-          schema:
-            type: object
-            properties:
-              success: { type: boolean, example: false }
-              message: { type: string }
-              data:
-                type: object
-                properties:
-                  errors: { type: object }
 
   # ==========================================
   # MODUL 2: PENULIS & MANAJEMEN NASKAH (KLP 3)
