@@ -212,7 +212,6 @@ paths:
                 name: { type: string }
                 email: { type: string, format: email }
                 institution: { type: string }
-                phone: { type: string }
                 book_title: { type: string }
                 book_type: { type: string, enum: [buku ajar, buku referensi] }
                 ai_ethics_agreed: { type: boolean, default: true }
@@ -1566,9 +1565,6 @@ components:
         institution:
           type: string
           example: "Universitas Negeri Yogyakarta"
-        phone:
-          type: string
-          example: "08123456789"
         book_title:
           type: string
           example: "Pengantar Ilmu Komputer untuk Perguruan Tinggi"
