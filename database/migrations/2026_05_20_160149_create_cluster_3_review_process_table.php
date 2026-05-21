@@ -32,7 +32,7 @@ return new class extends Migration
         // 3. Review Scores Table (Disini kolom nile sudah diubah menjadi nilai)
         Schema::create('review_scores', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('rs_id')->unique()->constrained('review_submissions')->onUpdate('cascade')->onDelete('cascade');
+            $table->foreignId('rs_id')->constrained('review_submissions')->onUpdate('cascade')->onDelete('cascade');
             $table->foreignId('rubric_id')->constrained('assessment_rubric')->onUpdate('cascade')->onDelete('restrict');
             $table->integer('nilai')->nullable(); 
         });

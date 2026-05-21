@@ -18,9 +18,14 @@ use App\Http\Controllers\Api\Module3\ReviewController;
 
 // For the mock API, we skip actual middleware authentication for now.
 
-Route::prefix('admin/manuscripts')->group(function () {
-    Route::get('/unassigned', [AdminManuscriptController::class, 'getUnassigned']);
-    Route::post('/{manuscriptId}/assign-reviewer', [AdminManuscriptController::class, 'assignReviewer']);
+Route::prefix('admin')->group(function () {
+    Route::prefix('manuscripts')->group(function () {
+        Route::get('/', [AdminManuscriptController::class, 'index']);
+        Route::get('/unassigned', [AdminManuscriptController::class, 'getUnassigned']);
+        Route::post('/{manuscriptId}/assign-reviewer', [AdminManuscriptController::class, 'assignReviewer']);
+        Route::delete('/{manuscriptId}/remove-reviewer/{reviewerId}', [AdminManuscriptController::class, 'removeReviewer']);
+    });
+    Route::get('/reviewers', [AdminManuscriptController::class, 'getReviewers']);
 });
 
 Route::prefix('reviewer')->group(function () {
