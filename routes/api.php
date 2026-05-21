@@ -18,7 +18,7 @@ if (!class_exists('MockAuthMiddleware')) {
         public function handle($request, $next) {
             // 1 = Admin, 2 = Reviewer, 3 = Author, 4 = Editor
             // Change this ID to test different roles
-            $user = \App\Models\User::find(1);
+            $user = \App\Models\User::find(2);
             if ($user) {
                 auth()->setUser($user);
                 $request->setUserResolver(fn() => $user);

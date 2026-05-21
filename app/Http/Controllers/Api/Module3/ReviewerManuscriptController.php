@@ -18,7 +18,11 @@ class ReviewerManuscriptController extends Controller
      */
     private function getCurrentReviewer(): ?User
     {
-        return auth('sanctum')->user() ?? auth()->user() ?? User::where('role_id', 2)->first();
+        // TODO: Uncomment this and remove the block underneath to switch to real auth
+        // return auth('sanctum')->user() ?? auth()->user() ?? User::where('role_id', 2)->first();
+
+        // Comments hardcoded 'sanctum' guard to prevent crashes when the guard is not yet defined
+        return auth()->user() ?? User::where('role_id', 2)->first();
     }
 
     /**
@@ -41,7 +45,7 @@ class ReviewerManuscriptController extends Controller
 
         $taskList = $submissions->map(function ($sub) {
             $m = $sub->manuscript;
-            
+
             $statusText = 'Belum Review';
             $progress = 0;
             if ($sub->status === 'under_review') {
@@ -99,7 +103,7 @@ class ReviewerManuscriptController extends Controller
         if ($assignment->status === 'pending') {
             $assignment->update(['status' => 'under_review']);
         }
-        
+
         $manuscript = Manuscript::findOrFail($manuscriptId);
         if ($manuscript->status === 'reviewer_assigned') {
             $manuscript->update(['status' => 'under_review']);
