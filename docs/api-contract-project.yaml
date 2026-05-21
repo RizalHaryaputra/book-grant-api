@@ -4,7 +4,7 @@ info:
   description: |
     API Master Contract for all 4 modules in the Book Grant Writing System.
     (Kontrak Master API untuk ke-4 modul pada Sistem Penulisan Hibah Buku.)
-    
+
     Termasuk: Modul 1 Fondasi Sistem, User, Role & Kontrak (Kelompok 4)
     Modul 2 Penulis & Manajemen Naskah (Kelompok 3)
     Modul 3 Reviewer & Proses Review (Kelompok 2)
@@ -16,7 +16,7 @@ servers:
 
 tags:
   - name: Modul 1 - Fondasi Sistem & Kontrak (Kelompok 4)
-    description: Login, role access, master data, akun, upload kontrak, validasi kontrak.
+    description: Login, role access, master data, akun, generate kontrak, validasi kontrak.
   - name: Modul 2 - Penulis & Manajemen Naskah (Kelompok 3)
     description: Dashboard penulis, unggah draft awal, revisi naskah, dokumen administrasi.
   - name: Modul 3 - Reviewer & Proses Review (Kelompok 2)
@@ -26,11 +26,14 @@ tags:
 
 paths:
   # ==========================================
-  # MODUL 1: FONDASI SISTEM & KONTRAK (KLP 4) - DENGAN AUTO GENERATE AKUN
+  # MODUL 1: FONDASI SISTEM & KONTRAK (KLP 4)
   # ==========================================
   /auth/login:
     post:
       summary: Login Pengguna
+      description: |
+        Endpoint login untuk semua role (admin, penulis, reviewer, penerbit).
+        Mengembalikan Bearer Token untuk autentikasi request selanjutnya.
       tags:
         - Modul 1 - Fondasi Sistem & Kontrak (Kelompok 4)
       requestBody:
@@ -41,8 +44,14 @@ paths:
               type: object
               required: [email, password]
               properties:
-                email: { type: string, format: email }
-                password: { type: string }
+                email:
+                  type: string
+                  format: email
+                  example: "admin@hibahbuku.id"
+                password:
+                  type: string
+                  format: password
+                  example: "admin123"
       responses:
         "200":
           description: Login berhasil.
@@ -51,18 +60,15 @@ paths:
               schema:
                 type: object
                 properties:
-                  success: { type: boolean, example: true }
-                  message: { type: string, example: "Login berhasil." }
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Login berhasil."
                   data:
                     type: object
                     properties:
-<<<<<<< Updated upstream
-                      token: { type: string }
-                      user: { $ref: '#/components/schemas/User' }
-        '401':
-          $ref: '#/components/responses/UnauthorizedError'
-
-=======
                       token:
                         type: string
                       user:
@@ -80,7 +86,6 @@ paths:
           $ref: "#/components/responses/UnauthorizedError"
         "422":
           $ref: "#/components/responses/ValidationError"
->>>>>>> Stashed changes
   /auth/logout:
     post:
       summary: Logout Pengguna
@@ -94,14 +99,9 @@ paths:
           content:
             application/json:
               schema:
-<<<<<<< Updated upstream
-                $ref: '#/components/schemas/SuccessResponse'
-
-=======
                 $ref: "#/components/schemas/SuccessResponse"
         "401":
           $ref: "#/components/responses/UnauthorizedError"
->>>>>>> Stashed changes
   /auth/me:
     get:
       summary: Data User yang Sedang Login
@@ -117,22 +117,15 @@ paths:
               schema:
                 type: object
                 properties:
-<<<<<<< Updated upstream
-                  success: { type: boolean }
-                  data: { $ref: '#/components/schemas/User' }
-
-  # -------------------- ADMIN USER MANAGEMENT --------------------
-=======
                   success:
                     type: boolean
                   data:
                     $ref: "#/components/schemas/User"
         "401":
           $ref: "#/components/responses/UnauthorizedError"
->>>>>>> Stashed changes
   /admin/users:
     get:
-      summary: Daftar Semua User (Admin)
+      summary: Daftar Semua User
       tags:
         - Modul 1 - Fondasi Sistem & Kontrak (Kelompok 4)
       security:
@@ -142,7 +135,7 @@ paths:
           in: query
           schema:
             type: string
-            enum: [admin, penulis, reviewer, penerbit]
+            enum: [penulis, reviewer, penerbit]
       responses:
         "200":
           description: Daftar user berhasil diambil.
@@ -151,10 +144,6 @@ paths:
               schema:
                 type: object
                 properties:
-<<<<<<< Updated upstream
-                  success: { type: boolean }
-                  data: { type: array, items: { $ref: '#/components/schemas/User' } }
-=======
                   data:
                     type: array
                     items:
@@ -163,9 +152,8 @@ paths:
           $ref: "#/components/responses/UnauthorizedError"
         "403":
           $ref: "#/components/responses/ForbiddenError"
->>>>>>> Stashed changes
     post:
-      summary: Buat Akun Baru (Manual oleh Admin)
+      summary: Buat Akun Reviewer atau Penerbit
       tags:
         - Modul 1 - Fondasi Sistem & Kontrak (Kelompok 4)
       security:
@@ -178,21 +166,21 @@ paths:
               type: object
               required: [name, email, role, password]
               properties:
-                name: { type: string }
-                email: { type: string }
-                role: { type: string, enum: [admin, penulis, reviewer, penerbit] }
-                password: { type: string }
-                is_active: { type: boolean, default: true }
+                name:
+                  type: string
+                email:
+                  type: string
+                role:
+                  type: string
+                  enum: [reviewer, penerbit]
+                password:
+                  type: string
       responses:
         "201":
           description: Akun berhasil dibuat.
           content:
             application/json:
               schema:
-<<<<<<< Updated upstream
-                $ref: '#/components/schemas/SuccessResponseObject'
-
-=======
                 $ref: "#/components/schemas/SuccessResponseObject"
         "401":
           $ref: "#/components/responses/UnauthorizedError"
@@ -200,7 +188,6 @@ paths:
           $ref: "#/components/responses/ForbiddenError"
         "422":
           $ref: "#/components/responses/ValidationError"
->>>>>>> Stashed changes
   /admin/users/{id}:
     put:
       summary: Update Data User
@@ -212,7 +199,8 @@ paths:
         - name: id
           in: path
           required: true
-          schema: { type: integer }
+          schema:
+            type: integer
       requestBody:
         required: true
         content:
@@ -220,15 +208,13 @@ paths:
             schema:
               type: object
               properties:
-                name: { type: string }
-                email: { type: string }
-                is_active: { type: boolean }
-                password: { type: string }
-                role_id: { type: integer }
+                name:
+                  type: string
+                is_active:
+                  type: boolean
+                password:
+                  type: string
       responses:
-<<<<<<< Updated upstream
-        '200': { description: User berhasil diupdate. }
-=======
         "200":
           description: User berhasil diupdate.
           content:
@@ -243,9 +229,8 @@ paths:
           $ref: "#/components/responses/NotFoundError"
         "422":
           $ref: "#/components/responses/ValidationError"
->>>>>>> Stashed changes
     delete:
-      summary: Hapus User (Soft delete)
+      summary: Hapus User
       tags:
         - Modul 1 - Fondasi Sistem & Kontrak (Kelompok 4)
       security:
@@ -254,13 +239,9 @@ paths:
         - name: id
           in: path
           required: true
-          schema: { type: integer }
+          schema:
+            type: integer
       responses:
-<<<<<<< Updated upstream
-        '200': { description: User dinonaktifkan. }
-
-  # -------------------- FORM KESEDIAAN + AUTO CREATE ACCOUNT (CORE CHANGE) --------------------
-=======
         "200":
           description: User berhasil dihapus.
           content:
@@ -273,20 +254,10 @@ paths:
           $ref: "#/components/responses/ForbiddenError"
         "404":
           $ref: "#/components/responses/NotFoundError"
->>>>>>> Stashed changes
   /author-confirmations:
     post:
-      summary: Submit Form Kesediaan Penulis (Calon Penulis)
-      description: |
-        **Endpoint publik (tanpa login).**  
-        Setelah data disimpan ke tabel `author_profiles`, sistem **otomatis**:
-        1. Membuat akun penulis di tabel `users` dengan role `penulis`.
-        2. Menghasilkan password acak (8 karakter alfanumerik).
-        3. Menyimpan `user_id` yang baru dibuat ke `author_profiles`.
-        4. Memanggil endpoint `/notification/send` (Modul 4) untuk mengirim email berisi username (email) dan password ke penulis.
-        5. Mengubah status author menjadi `account_created`.
-
-        **Catatan:** Proses ini bersifat atomik; jika gagal di tengah, semua perubahan dibatalkan (rollback).
+      summary: Submit Form Kesediaan Penulis
+      description: Endpoint publik (tanpa login).
       tags:
         - Modul 1 - Fondasi Sistem & Kontrak (Kelompok 4)
       requestBody:
@@ -295,44 +266,22 @@ paths:
           application/json:
             schema:
               type: object
-              required: [name, email, institution, book_title, book_type]
+              required: [name, email, book_title, book_type]
               properties:
-                name: { type: string }
-                email: { type: string, format: email }
-                institution: { type: string }
-                book_title: { type: string }
-                book_type: { type: string, enum: [buku ajar, buku referensi] }
-                ai_ethics_agreed: { type: boolean, default: true }
-                willingness_statement: { type: boolean, default: true, description: "Pernyataan kesediaan mengikuti proses hibah" }
+                name:
+                  type: string
+                email:
+                  type: string
+                institution:
+                  type: string
+                phone:
+                  type: string
+                book_title:
+                  type: string
+                book_type:
+                  type: string
+                  enum: [ajar, referensi]
       responses:
-<<<<<<< Updated upstream
-        '201':
-          description: Form kesediaan diproses, akun penulis berhasil dibuat, dan email dikirim.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success: { type: boolean, example: true }
-                  message: { type: string, example: "Akun penulis berhasil dibuat. Email kredensial telah dikirim." }
-                  data:
-                    type: object
-                    properties:
-                      author_id: { type: integer }
-                      user_id: { type: integer }
-                      status: { type: string, example: "account_created" }
-        '202':
-          description: Data tersimpan, tetapi email gagal dikirim (misal modul 4 tidak merespon). Akun tetap dibuat, perlu resend email via admin.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success: { type: boolean, example: false }
-                  message: { type: string, example: "Akun dibuat, namun email gagal terkirim. Silakan hubungi admin untuk resend." }
-        '422':
-          $ref: '#/components/responses/ValidationError'
-=======
         "201":
           description: Form kesediaan berhasil disubmit.
           content:
@@ -341,7 +290,6 @@ paths:
                 $ref: "#/components/schemas/SuccessResponse"
         "422":
           $ref: "#/components/responses/ValidationError"
->>>>>>> Stashed changes
     get:
       summary: Daftar Form Kesediaan (Admin)
       tags:
@@ -353,306 +301,15 @@ paths:
           in: query
           schema:
             type: string
-            enum: [registered, account_created, contract_uploaded, contract_validated, contract_rejected]
+            enum: [pending, processed]
       responses:
-<<<<<<< Updated upstream
-        '200':
-          description: Daftar author profiles berhasil diambil (dengan join user untuk name/email).
-=======
         "200":
           description: Daftar form kesediaan berhasil diambil.
->>>>>>> Stashed changes
           content:
             application/json:
               schema:
                 type: object
                 properties:
-<<<<<<< Updated upstream
-                  success: { type: boolean }
-                  data: { type: array, items: { $ref: '#/components/schemas/Author' } }
-
-  # -------------------- ADMIN RESEND AKUN (jika email gagal) --------------------
-  /admin/authors/{authorId}/resend-credentials:
-    post:
-      summary: Resend Credentials Email ke Penulis (Admin)
-      description: |
-        Admin dapat memanggil endpoint ini jika penulis tidak menerima email kredensial saat pendaftaran otomatis.
-        Sistem akan generate ulang password baru, update di database, dan kirim email baru.
-      tags:
-        - Modul 1 - Fondasi Sistem & Kontrak (Kelompok 4)
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: authorId
-          in: path
-          required: true
-          schema: { type: integer }
-      responses:
-        '200':
-          description: Email kredensial berhasil dikirim ulang.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SuccessResponseObject'
-        '404':
-          $ref: '#/components/responses/NotFoundError'
-
-  # -------------------- AUTHOR PROFILE & CO-AUTHOR --------------------
-  /authors/{id}:
-    get:
-      summary: Get Author Profile by ID
-      tags:
-        - Modul 1 - Fondasi Sistem & Kontrak (Kelompok 4)
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema: { type: integer }
-      responses:
-        '200':
-          description: Data author berhasil diambil (termasuk name dan email dari user).
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success: { type: boolean }
-                  data: { $ref: '#/components/schemas/Author' }
-    put:
-      summary: Update Author Profile
-      tags:
-        - Modul 1 - Fondasi Sistem & Kontrak (Kelompok 4)
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema: { type: integer }
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                institution: { type: string }
-                book_title: { type: string }
-                book_type: { type: string, enum: [buku ajar, buku referensi] }
-                ai_ethics_agreed: { type: boolean }
-                willingness_statement: { type: boolean }
-      responses:
-        '200': { description: Author profile berhasil diupdate. }
-
-  /authors/{authorId}/co-authors:
-    get:
-      summary: Get Co-Authors
-      tags:
-        - Modul 1 - Fondasi Sistem & Kontrak (Kelompok 4)
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: authorId
-          in: path
-          required: true
-          schema: { type: integer }
-      responses:
-        '200':
-          description: Daftar co-author berhasil diambil.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success: { type: boolean }
-                  data: { type: array, items: { $ref: '#/components/schemas/CoAuthor' } }
-    post:
-      summary: Add Co-Author
-      tags:
-        - Modul 1 - Fondasi Sistem & Kontrak (Kelompok 4)
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: authorId
-          in: path
-          required: true
-          schema: { type: integer }
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [name]
-              properties:
-                name: { type: string }
-                is_mandatory: { type: boolean, default: false }
-                sort_order: { type: integer }
-      responses:
-        '201': { description: Co-author berhasil ditambahkan. }
-    put:
-      summary: Update Co-Author
-      tags:
-        - Modul 1 - Fondasi Sistem & Kontrak (Kelompok 4)
-      parameters:
-        - name: authorId
-          in: path
-          required: true
-        - name: coAuthorId
-          in: query
-          required: true
-          schema: { type: integer }
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                name: { type: string }
-                is_mandatory: { type: boolean }
-                sort_order: { type: integer }
-      responses:
-        '200': { description: Co-author berhasil diupdate. }
-    delete:
-      summary: Remove Co-Author
-      tags:
-        - Modul 1 - Fondasi Sistem & Kontrak (Kelompok 4)
-      parameters:
-        - name: authorId
-          in: path
-          required: true
-        - name: coAuthorId
-          in: query
-          required: true
-          schema: { type: integer }
-      responses:
-        '200': { description: Co-author berhasil dihapus. }
-
-  # -------------------- KONTRAK (TANPA CONTRACT_NUMBER) --------------------
-  /contracts:
-    post:
-      summary: Upload Contract (Penulis)
-      description: Mengunggah file kontrak (PDF) untuk author profile yang sudah memiliki akun.
-      tags:
-        - Modul 1 - Fondasi Sistem & Kontrak (Kelompok 4)
-      security:
-        - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          multipart/form-data:
-            schema:
-              type: object
-              required: [author_profile_id, file]
-              properties:
-                author_profile_id: { type: integer }
-                file: { type: string, format: binary, description: "File kontrak (PDF)" }
-      responses:
-        '201':
-          description: Kontrak berhasil diupload. Status author berubah menjadi `contract_uploaded`.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SuccessResponseObject'
-
-  /contracts/{contractId}:
-    get:
-      summary: Get Contract Detail
-      tags:
-        - Modul 1 - Fondasi Sistem & Kontrak (Kelompok 4)
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: contractId
-          in: path
-          required: true
-          schema: { type: integer }
-      responses:
-        '200':
-          description: Data kontrak berhasil diambil.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success: { type: boolean }
-                  data: { $ref: '#/components/schemas/Contract' }
-    put:
-      summary: Update Contract (Revisi)
-      description: Mengganti file kontrak yang sudah diupload sebelumnya.
-      tags:
-        - Modul 1 - Fondasi Sistem & Kontrak (Kelompok 4)
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: contractId
-          in: path
-          required: true
-      requestBody:
-        required: true
-        content:
-          multipart/form-data:
-            schema:
-              type: object
-              properties:
-                file: { type: string, format: binary, description: "File kontrak baru (PDF)" }
-      responses:
-        '200': { description: Kontrak berhasil diupdate. }
-    patch:
-      summary: Validate or Reject Contract (Admin)
-      tags:
-        - Modul 1 - Fondasi Sistem & Kontrak (Kelompok 4)
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: contractId
-          in: path
-          required: true
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [status]
-              properties:
-                status: { type: string, enum: [validated, rejected, revision] }
-                rejection_reason: { type: string }
-      responses:
-        '200':
-          description: |
-            - Jika status `validated`, status author berubah menjadi `contract_validated` dan penulis menerima notifikasi untuk upload draft awal.
-            - Jika `rejected`, status author menjadi `contract_rejected`.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SuccessResponseObject'
-
-  /admin/contracts:
-    get:
-      summary: List All Contracts (Admin)
-      tags:
-        - Modul 1 - Fondasi Sistem & Kontrak (Kelompok 4)
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: status
-          in: query
-          schema: { type: string, enum: [uploaded, validated, rejected, revision] }
-      responses:
-        '200':
-          description: Daftar kontrak berhasil diambil.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success: { type: boolean }
-                  data: { type: array, items: { $ref: '#/components/schemas/Contract' } }
-=======
                   data:
                     type: array
                     items:
@@ -661,7 +318,6 @@ paths:
           $ref: "#/components/responses/UnauthorizedError"
         "403":
           $ref: "#/components/responses/ForbiddenError"
->>>>>>> Stashed changes
 
   # ==========================================
   # MODUL 2: PENULIS & MANAJEMEN NASKAH (KLP 3)
@@ -669,7 +325,6 @@ paths:
   /author/dashboard:
     get:
       summary: Author Dashboard (Dasbor Penulis)
-      description: Mengambil informasi lengkap terkait performa naskah aktif penulis beserta riwayat pengajuan naskah sebelumnya.
       tags:
         - Modul 2 - Penulis & Manajemen Naskah (Kelompok 3)
       security:
@@ -680,20 +335,12 @@ paths:
           content:
             application/json:
               schema:
-<<<<<<< Updated upstream
-                $ref: '#/components/schemas/AuthorDashboardResponse'
-        '401':
-          $ref: '#/components/responses/UnauthorizedError'
-
-=======
                 $ref: "#/components/schemas/SuccessResponseObject"
         "401":
           $ref: "#/components/responses/UnauthorizedError"
->>>>>>> Stashed changes
   /author/manuscripts/drafts:
     post:
       summary: Upload Initial Draft (Unggah Draft Awal)
-      description: Mengunggah file draft naskah baru untuk pertama kalinya ke dalam sistem beserta pengisian data kelengkapan atribut buku.
       tags:
         - Modul 2 - Penulis & Manajemen Naskah (Kelompok 3)
       security:
@@ -715,45 +362,28 @@ paths:
                 file_draft:
                   type: string
                   format: binary
-                  description: Berkas naskah bertipe PDF atau DOCX.
                 title:
                   type: string
-                  example: "Pengantar Sistem Cerdas"
                 book_type:
                   type: string
-                  enum: [ajar, referensi]
-                  example: "ajar"
                 abstract:
                   type: string
-                  example: "Buku ini membahas konsep dasar rekayasa kecerdasan komputasional..."
                 total_pages:
                   type: integer
-                  example: 150
                 category:
                   type: string
-                  example: "Teknologi Informasi"
       responses:
         "201":
           description: Draft awal berhasil diunggah.
           content:
             application/json:
               schema:
-<<<<<<< Updated upstream
-                $ref: '#/components/schemas/ManuscriptResponse'
-        '401':
-          $ref: '#/components/responses/UnauthorizedError'
-        '422':
-          $ref: '#/components/responses/ValidationError'
-
-=======
                 $ref: "#/components/schemas/SuccessResponseObject"
         "401":
           $ref: "#/components/responses/UnauthorizedError"
->>>>>>> Stashed changes
   /author/manuscripts/{manuscriptId}/metadata:
     put:
       summary: Update Manuscript Metadata (Perbarui Metadata Naskah)
-      description: Memperbarui data tekstual atribut buku seperti perubahan judul, abstrak, ataupun kategori keilmuan naskah.
       tags:
         - Modul 2 - Penulis & Manajemen Naskah (Kelompok 3)
       security:
@@ -764,7 +394,6 @@ paths:
           required: true
           schema:
             type: integer
-          description: ID unik naskah yang ingin diubah metadatanya.
       requestBody:
         required: true
         content:
@@ -774,39 +403,22 @@ paths:
               properties:
                 title:
                   type: string
-                  example: "Pengantar Sistem Cerdas Edisi Revisi"
                 abstract:
                   type: string
-                  example: "Pembaruan materi fokus pada arsitektur neural network modern..."
                 category:
                   type: string
-                  example: "Kecerdasan Buatan"
       responses:
         "200":
           description: Metadata berhasil diperbarui.
           content:
             application/json:
               schema:
-<<<<<<< Updated upstream
-                $ref: '#/components/schemas/ManuscriptResponse'
-        '401':
-          $ref: '#/components/responses/UnauthorizedError'
-        '403':
-          $ref: '#/components/responses/ForbiddenError'
-        '404':
-          $ref: '#/components/responses/NotFoundError'
-        '422':
-          $ref: '#/components/responses/ValidationError'
-
-=======
                 $ref: "#/components/schemas/SuccessResponseObject"
         "404":
           $ref: "#/components/responses/NotFoundError"
->>>>>>> Stashed changes
   /author/manuscripts/{manuscriptId}/reviews:
     get:
       summary: Get Manuscript Reviews (Lihat Hasil Review)
-      description: Mengambil seluruh rincian hasil penilaian kriteria rubrik beserta komentar evaluasi yang ditulis oleh peninjau (reviewer).
       tags:
         - Modul 2 - Penulis & Manajemen Naskah (Kelompok 3)
       security:
@@ -817,33 +429,20 @@ paths:
           required: true
           schema:
             type: integer
-          description: ID unik naskah yang ingin dilihat hasil review-nya.
       responses:
         "200":
           description: Hasil review berhasil diambil.
           content:
             application/json:
               schema:
-<<<<<<< Updated upstream
-                $ref: '#/components/schemas/ManuscriptReviewListResponse'
-        '401':
-          $ref: '#/components/responses/UnauthorizedError'
-        '403':
-          $ref: '#/components/responses/ForbiddenError'
-        '404':
-          $ref: '#/components/responses/NotFoundError'
-
-=======
                 $ref: "#/components/schemas/SuccessResponseList"
         "403":
           $ref: "#/components/responses/ForbiddenError"
         "404":
           $ref: "#/components/responses/NotFoundError"
->>>>>>> Stashed changes
   /author/manuscripts/{manuscriptId}/revisions:
     post:
       summary: Upload Revision (Unggah Revisi Naskah)
-      description: Mengunggah berkas naskah versi terbaru yang telah diperbaiki oleh penulis berdasarkan hasil evaluasi tim reviewer.
       tags:
         - Modul 2 - Penulis & Manajemen Naskah (Kelompok 3)
       security:
@@ -854,7 +453,6 @@ paths:
           required: true
           schema:
             type: integer
-          description: ID naskah yang dituju untuk pengunggahan berkas revisinya.
       requestBody:
         required: true
         content:
@@ -867,34 +465,20 @@ paths:
                 file_revision:
                   type: string
                   format: binary
-                  description: Berkas naskah revisi terbaru (PDF/DOCX).
                 revision_note:
                   type: string
-                  example: "Telah memperbaiki format sitasi penulisan pustaka pada Bab 2."
       responses:
         "201":
           description: Revisi naskah berhasil diunggah.
           content:
             application/json:
               schema:
-<<<<<<< Updated upstream
-                $ref: '#/components/schemas/ManuscriptResponse'
-        '401':
-          $ref: '#/components/responses/UnauthorizedError'
-        '404':
-          $ref: '#/components/responses/NotFoundError'
-        '422':
-          $ref: '#/components/responses/ValidationError'
-
-=======
                 $ref: "#/components/schemas/SuccessResponseObject"
         "404":
           $ref: "#/components/responses/NotFoundError"
->>>>>>> Stashed changes
   /author/manuscripts/{manuscriptId}/documents:
     post:
       summary: Upload Administrative Document (Unggah Dokumen Administrasi)
-      description: Mengunggah berkas-berkas administratif kelengkapan tahap pra-cetak, seperti surat pernyataan keaslian naskah atau lembar bermeterai.
       tags:
         - Modul 2 - Penulis & Manajemen Naskah (Kelompok 3)
       security:
@@ -905,7 +489,6 @@ paths:
           required: true
           schema:
             type: integer
-          description: ID naskah terkait kelengkapan dokumen penunjang ini.
       requestBody:
         required: true
         content:
@@ -919,32 +502,20 @@ paths:
                 document_file:
                   type: string
                   format: binary
-                  description: Berkas dokumen pendukung (PDF/JPG/PNG) maksimal 5MB.
                 document_type:
                   type: string
                   enum:
                     - surat_pernyataan
                     - scan_bermeterai
-                  example: "surat_pernyataan"
       responses:
         "201":
           description: Dokumen administrasi berhasil diunggah.
           content:
             application/json:
               schema:
-<<<<<<< Updated upstream
-                $ref: '#/components/schemas/AuthorDocumentResponse'
-        '401':
-          $ref: '#/components/responses/UnauthorizedError'
-        '404':
-          $ref: '#/components/responses/NotFoundError'
-        '422':
-          $ref: '#/components/responses/ValidationError'
-=======
                 $ref: "#/components/schemas/SuccessResponseObject"
         "404":
           $ref: "#/components/responses/NotFoundError"
->>>>>>> Stashed changes
 
   # ==========================================
   # MODUL 3: REVIEWER & PROSES REVIEW (KLP 2)
@@ -962,16 +533,9 @@ paths:
           content:
             application/json:
               schema:
-<<<<<<< Updated upstream
-                $ref: '#/components/schemas/SuccessResponseList'
-        '401':
-          $ref: '#/components/responses/UnauthorizedError'
-
-=======
                 $ref: "#/components/schemas/SuccessResponseList"
         "401":
           $ref: "#/components/responses/UnauthorizedError"
->>>>>>> Stashed changes
   /admin/manuscripts/{manuscriptId}/assign-reviewer:
     post:
       summary: Assign Reviewer to Manuscript (Tugaskan Reviewer pada Naskah)
@@ -997,10 +561,12 @@ paths:
               properties:
                 reviewer_id:
                   type: integer
+                  description: ID of the reviewer. (ID dari reviewer.)
                   example: 5
                 deadline:
                   type: string
                   format: date
+                  description: Review deadline date. (Tanggal tenggat waktu review.)
                   example: "2026-05-20"
       responses:
         "200":
@@ -1008,16 +574,9 @@ paths:
           content:
             application/json:
               schema:
-<<<<<<< Updated upstream
-                $ref: '#/components/schemas/SuccessResponse'
-        '404':
-          $ref: '#/components/responses/NotFoundError'
-
-=======
                 $ref: "#/components/schemas/SuccessResponse"
         "404":
           $ref: "#/components/responses/NotFoundError"
->>>>>>> Stashed changes
   /reviewer/dashboard:
     get:
       summary: Reviewer Dashboard (Dasbor Reviewer)
@@ -1031,12 +590,7 @@ paths:
           content:
             application/json:
               schema:
-<<<<<<< Updated upstream
-                $ref: '#/components/schemas/SuccessResponseList'
-
-=======
                 $ref: "#/components/schemas/SuccessResponseList"
->>>>>>> Stashed changes
   /reviewer/manuscripts/{manuscriptId}:
     get:
       summary: Get Manuscript Details for Review (Dapatkan Detail Naskah untuk Direview)
@@ -1056,16 +610,9 @@ paths:
           content:
             application/json:
               schema:
-<<<<<<< Updated upstream
-                $ref: '#/components/schemas/SuccessResponseObject'
-        '403':
-          $ref: '#/components/responses/ForbiddenError'
-
-=======
                 $ref: "#/components/schemas/SuccessResponseObject"
         "403":
           $ref: "#/components/responses/ForbiddenError"
->>>>>>> Stashed changes
   /reviewer/manuscripts/{manuscriptId}/rubric:
     get:
       summary: Get Review Rubric (Dapatkan Rubrik Penilaian)
@@ -1085,12 +632,7 @@ paths:
           content:
             application/json:
               schema:
-<<<<<<< Updated upstream
-                $ref: '#/components/schemas/SuccessResponseList'
-
-=======
                 $ref: "#/components/schemas/SuccessResponseList"
->>>>>>> Stashed changes
   /reviewer/manuscripts/{manuscriptId}/review:
     post:
       summary: Submit Review Result (Kirim Hasil Review)
@@ -1116,6 +658,7 @@ paths:
               properties:
                 rubric_scores:
                   type: array
+                  description: Array of scores based on criteria. (Array nilai berdasarkan kriteria.)
                   items:
                     type: object
                     required:
@@ -1130,19 +673,15 @@ paths:
                         example: 85
                 narrative_feedback:
                   type: string
-                  example: "Secara keseluruhan bagus, namun bab 2 perlu referensi terbaru."
+                  description: Narrative feedback from reviewer. (Catatan naratif dari reviewer.)
+                  example: "Secara keseluruhan bagus, namun pada bab 2 perlu ditambahkan referensi jurnal terbaru."
       responses:
         "200":
           description: Review berhasil dikirim.
           content:
             application/json:
               schema:
-<<<<<<< Updated upstream
-                $ref: '#/components/schemas/SuccessResponseObject'
-
-=======
                 $ref: "#/components/schemas/SuccessResponseObject"
->>>>>>> Stashed changes
   /manuscripts/{manuscriptId}/compiled-reviews:
     get:
       summary: Get Compiled Reviews (Dapatkan Kompilasi Review)
@@ -1215,17 +754,6 @@ paths:
                             submitted_at:
                               type: string
                               format: date-time
-<<<<<<< Updated upstream
-        '401':
-          $ref: '#/components/responses/UnauthorizedError'
-        '403':
-          $ref: '#/components/responses/ForbiddenError'
-
-  /publisher/preprint-list:
-    get:
-      summary: Get Preprint Manuscripts List (Daftar Naskah Pra-Cetak)
-      description: Mengembalikan daftar naskah status `preprint` dengan pagination.
-=======
                             _links:
                               type: object
                               properties:
@@ -1262,7 +790,6 @@ paths:
         Mengembalikan daftar naskah dengan status `preprint` (berdasarkan manuscripts.status).
         Data kelengkapan diambil dari tabel `publisher_checks`.
         Mendukung pagination dan filter status kelengkapan.
->>>>>>> Stashed changes
       tags:
         - Modul 4 - Penerbit, Pra-Cetak, & Monitoring (Kelompok 1)
       security:
@@ -1338,10 +865,6 @@ paths:
                             type: integer
                           total_pages:
                             type: integer
-<<<<<<< Updated upstream
-        '401':
-          $ref: '#/components/responses/UnauthorizedError'
-=======
                   _links:
                     type: object
                     properties:
@@ -1356,7 +879,6 @@ paths:
                             example: GET
         "401":
           $ref: "#/components/responses/UnauthorizedError"
->>>>>>> Stashed changes
 
   /publisher/check/{manuscriptId}:
     get:
@@ -1416,12 +938,6 @@ paths:
                             type: boolean
                           notes:
                             type: string
-<<<<<<< Updated upstream
-        '401':
-          $ref: '#/components/responses/UnauthorizedError'
-        '404':
-          $ref: '#/components/responses/NotFoundError'
-=======
                   _links:
                     type: object
                     properties:
@@ -1447,7 +963,6 @@ paths:
           $ref: "#/components/responses/UnauthorizedError"
         "404":
           $ref: "#/components/responses/NotFoundError"
->>>>>>> Stashed changes
 
     post:
       summary: Save Preprint Check
@@ -1489,13 +1004,6 @@ paths:
           content:
             application/json:
               schema:
-<<<<<<< Updated upstream
-                $ref: '#/components/schemas/SuccessResponse'
-        '401':
-          $ref: '#/components/responses/UnauthorizedError'
-        '404':
-          $ref: '#/components/responses/NotFoundError'
-=======
                 type: object
                 properties:
                   success:
@@ -1527,7 +1035,6 @@ paths:
           $ref: "#/components/responses/UnauthorizedError"
         "404":
           $ref: "#/components/responses/NotFoundError"
->>>>>>> Stashed changes
 
   /publisher/decision:
     post:
@@ -1566,17 +1073,6 @@ paths:
           content:
             application/json:
               schema:
-<<<<<<< Updated upstream
-                $ref: '#/components/schemas/SuccessResponseObject'
-        '400':
-          description: Bad request
-        '401':
-          $ref: '#/components/responses/UnauthorizedError'
-        '403':
-          $ref: '#/components/responses/ForbiddenError'
-        '404':
-          $ref: '#/components/responses/NotFoundError'
-=======
                 type: object
                 properties:
                   success:
@@ -1619,16 +1115,11 @@ paths:
           $ref: "#/components/responses/ForbiddenError"
         "404":
           $ref: "#/components/responses/NotFoundError"
->>>>>>> Stashed changes
 
   /admin/dashboard-stats:
     get:
       summary: Admin Dashboard Statistics
       description: |
-<<<<<<< Updated upstream
-        Ringkasan statistik untuk admin: jumlah penulis, kontrak valid,
-        draft masuk, review berjalan, revisi, pra-cetak, siap cetak.
-=======
         Ringkasan statistik yang dihitung dari berbagai tabel:
         - total_penulis: count users where role = 'penulis'
         - total_kontrak_valid: count contracts status 'validated'
@@ -1637,7 +1128,6 @@ paths:
         - total_revisi: count manuscripts status 'revision_uploaded'
         - total_pracetak: count manuscripts status 'preprint'
         - total_siap_cetak: count manuscripts status 'ready_to_print'
->>>>>>> Stashed changes
       tags:
         - Modul 4 - Penerbit, Pra-Cetak, & Monitoring (Kelompok 1)
       security:
@@ -1669,17 +1159,6 @@ paths:
                         type: integer
                       total_siap_cetak:
                         type: integer
-<<<<<<< Updated upstream
-        '401':
-          $ref: '#/components/responses/UnauthorizedError'
-        '403':
-          $ref: '#/components/responses/ForbiddenError'
-
-  /admin/notification-logs:
-    get:
-      summary: Get Notification Logs (Log Notifikasi Email)
-      description: Admin melihat riwayat pengiriman email dengan filter dan pagination.
-=======
                   _links:
                     type: object
                     properties:
@@ -1704,7 +1183,6 @@ paths:
         Riwayat pengiriman email yang tersimpan di tabel `notification_log`.
         Data `type` sebenarnya berasal dari `notification_templates.event_type` melalui join.
         Mendukung filter dan pagination.
->>>>>>> Stashed changes
       tags:
         - Modul 4 - Penerbit, Pra-Cetak, & Monitoring (Kelompok 1)
       security:
@@ -1788,12 +1266,6 @@ paths:
                                       example: GET
                       pagination:
                         type: object
-<<<<<<< Updated upstream
-        '401':
-          $ref: '#/components/responses/UnauthorizedError'
-        '403':
-          $ref: '#/components/responses/ForbiddenError'
-=======
                   _links:
                     type: object
                     properties:
@@ -1810,7 +1282,6 @@ paths:
           $ref: "#/components/responses/UnauthorizedError"
         "403":
           $ref: "#/components/responses/ForbiddenError"
->>>>>>> Stashed changes
 
   /notification/send:
     post:
@@ -1883,17 +1354,10 @@ paths:
                             example: GET
         "400":
           description: Data tidak valid
-<<<<<<< Updated upstream
-        '401':
-          $ref: '#/components/responses/UnauthorizedError'
-        '403':
-          $ref: '#/components/responses/ForbiddenError'
-=======
         "401":
           $ref: "#/components/responses/UnauthorizedError"
         "403":
           $ref: "#/components/responses/ForbiddenError"
->>>>>>> Stashed changes
 
   /reminder/trigger:
     post:
@@ -1922,16 +1386,6 @@ paths:
                         type: integer
                       reminders_failed:
                         type: integer
-<<<<<<< Updated upstream
-        '401':
-          $ref: '#/components/responses/UnauthorizedError'
-        '403':
-          $ref: '#/components/responses/ForbiddenError'
-
-# ==============================================================
-# COMPONENTS
-# ==============================================================
-=======
                   _links:
                     type: object
                     properties:
@@ -1948,27 +1402,14 @@ paths:
           $ref: "#/components/responses/UnauthorizedError"
         "403":
           $ref: "#/components/responses/ForbiddenError"
->>>>>>> Stashed changes
 components:
   securitySchemes:
     bearerAuth:
       type: http
       scheme: bearer
       bearerFormat: JWT
-      description: Token dari Laravel Sanctum.
-
-  parameters:
-    manuscriptId:
-      name: manuscriptId
-      in: path
-      required: true
-      schema:
-        type: integer
-      description: The ID of the manuscript. (ID dari naskah.)
 
   schemas:
-
-    # ── Reusable wrappers ──────────────────────────────────────
     SuccessResponse:
       type: object
       properties:
@@ -1977,11 +1418,12 @@ components:
           example: true
         message:
           type: string
-          example: "Operasi berhasil."
+          description: Success message. (Pesan sukses.)
+          example: "Operation successful. (Operasi berhasil.)"
         data:
+          type: object
           nullable: true
           example: null
-
     SuccessResponseObject:
       type: object
       properties:
@@ -1990,10 +1432,10 @@ components:
           example: true
         message:
           type: string
-          example: "Data berhasil diambil."
+          example: "Data retrieved successfully. (Data berhasil diambil.)"
         data:
           type: object
-
+          example: { id: 1, status: "review_completed" }
     SuccessResponseList:
       type: object
       properties:
@@ -2002,16 +1444,12 @@ components:
           example: true
         message:
           type: string
-          example: "Daftar berhasil diambil."
+          example: "List retrieved successfully. (Daftar berhasil diambil.)"
         data:
           type: array
           items:
             type: object
-<<<<<<< Updated upstream
-
-=======
           example: [{ id: 1, title: "Manuskrip A" }]
->>>>>>> Stashed changes
     ValidationErrorResponse:
       type: object
       properties:
@@ -2020,249 +1458,59 @@ components:
           example: false
         message:
           type: string
-          example: "Data tidak valid."
         data:
           type: object
           properties:
             errors:
               type: object
-              example:
-                email: ["Email sudah terdaftar."]
-
-    # ── Modul 1 schemas ────────────────────────────────────────
     Role:
       type: object
       properties:
         id:
           type: integer
-          example: 2
         name:
           type: string
-          enum: [admin, penulis, reviewer, penerbit]
-          example: penulis
-
     User:
       type: object
       properties:
         id:
           type: integer
-          example: 1
         name:
           type: string
-          example: "Dr. Budi Santoso"
         email:
           type: string
-          format: email
-          example: "budi@uny.ac.id"
         is_active:
           type: boolean
-          example: true
         role:
           $ref: "#/components/schemas/Role"
         created_at:
           type: string
           format: date-time
-          example: "2026-05-01T08:00:00Z"
-
     AuthorConfirmation:
       type: object
       properties:
         id:
           type: integer
-          example: 1
         name:
           type: string
-          example: "Dr. Budi Santoso, M.Kom."
         email:
           type: string
-          format: email
-          example: "budi@uny.ac.id"
         institution:
           type: string
-          example: "Universitas Negeri Yogyakarta"
+        phone:
+          type: string
         book_title:
           type: string
-          example: "Pengantar Ilmu Komputer untuk Perguruan Tinggi"
         book_type:
           type: string
-          enum: [ajar, referensi]
-          example: ajar
         status:
           type: string
-          enum: [pending, processed]
-          example: pending
         created_at:
           type: string
-          format: date-time
-          example: "2026-05-01T08:00:00Z"
-
-    Contract:
-      type: object
-      properties:
-        id:
-          type: integer
-          example: 1
-        author_id:
-          type: integer
-          example: 3
-        file_url:
-          type: string
-          description: URL untuk mengakses/mengunduh file PDF kontrak.
-          example: "http://localhost:8000/storage/contracts/kontrak_budi_2026.pdf"
-        status:
-          type: string
-          enum: [contract_uploaded, contract_validated, contract_rejected]
-          example: contract_uploaded
-        rejection_reason:
-          type: string
-          nullable: true
-          description: Alasan penolakan kontrak oleh admin (jika ditolak).
-          example: null
-        validated_at:
-          type: string
-          format: date-time
-          nullable: true
-          example: null
-        created_at:
-          type: string
-          format: date-time
-          example: "2026-05-01T09:00:00Z"
-        updated_at:
-          type: string
-          format: date-time
-          example: "2026-05-01T09:00:00Z"
-
-    # ── Modul 2 Entities (Kelompok 3) ──────────────────────────
-    Manuscript:
-      type: object
-      properties:
-        id:
-          type: integer
-          example: 101
-        title:
-          type: string
-          example: "Pengantar Sistem Cerdas"
-        book_type:
-          type: string
-          example: "ajar"
-        abstract:
-          type: string
-          example: "Buku ini membahas konsep dasar rekayasa kecerdasan komputasional..."
-        total_pages:
-          type: integer
-          example: 150
-        category:
-          type: string
-          example: "Teknologi Informasi"
-        status:
-          type: string
-          example: "initial_draft_uploaded"
-        file_url:
-          type: string
-          example: "http://localhost:8000/storage/manuscripts/drafts/101_v1.pdf"
-        created_at:
-          type: string
-          format: date-time
-        updated_at:
-          type: string
-          format: date-time
-
-    AuthorDashboardData:
-      type: object
-      properties:
-        author_name:
-          type: string
-          example: "Dr. Budi Santoso, M.Kom."
-        active_manuscript:
-          $ref: '#/components/schemas/Manuscript'
-        history:
-          type: array
-          items:
-            $ref: '#/components/schemas/Manuscript'
-
-    ReviewComment:
-      type: object
-      properties:
-        reviewer_alias:
-          type: string
-          example: "Reviewer 1"
-        score:
-          type: integer
-          example: 85
-        feedback:
-          type: string
-          example: "Secara keseluruhan bagus, namun bab 2 perlu referensi terbaru."
-
-    AuthorDocumentData:
-      type: object
-      properties:
-        id:
-          type: integer
-          example: 50
-        manuscript_id:
-          type: integer
-          example: 101
-        document_type:
-          type: string
-          example: "surat_pernyataan"
-        file_url:
-          type: string
-          example: "http://localhost:8000/storage/documents/surat_pernyataan_101.pdf"
-
-    # ── Modul 2 Wrapped Responses (Kelompok 3) ──────────────────
-    AuthorDashboardResponse:
-      type: object
-      properties:
-        success:
-          type: boolean
-          example: true
-        message:
-          type: string
-          example: "Data dasbor berhasil diambil."
-        data:
-          $ref: '#/components/schemas/AuthorDashboardData'
-
-    ManuscriptResponse:
-      type: object
-      properties:
-        success:
-          type: boolean
-          example: true
-        message:
-          type: string
-          example: "Operasi manuskrip berhasil dilakukan."
-        data:
-          $ref: '#/components/schemas/Manuscript'
-
-    ManuscriptReviewListResponse:
-      type: object
-      properties:
-        success:
-          type: boolean
-          example: true
-        message:
-          type: string
-          example: "Hasil review berhasil diambil."
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/ReviewComment'
-
-    AuthorDocumentResponse:
-      type: object
-      properties:
-        success:
-          type: boolean
-          example: true
-        message:
-          type: string
-          example: "Dokumen administrasi berhasil diunggah."
-        data:
-          $ref: '#/components/schemas/AuthorDocumentData'
 
   responses:
     UnauthorizedError:
-      description: Tidak terautentikasi. Token tidak ada atau tidak valid.
+      description: Unauthorized
       content:
         application/json:
           schema:
@@ -2274,12 +1522,8 @@ components:
               message:
                 type: string
                 example: "Unauthenticated."
-              data:
-                nullable: true
-                example: null
-
     ForbiddenError:
-      description: Akses ditolak. Role tidak memiliki izin.
+      description: Forbidden
       content:
         application/json:
           schema:
@@ -2290,13 +1534,9 @@ components:
                 example: false
               message:
                 type: string
-                example: "Akses ditolak."
-              data:
-                nullable: true
-                example: null
-
+                example: "Access denied."
     NotFoundError:
-      description: Data tidak ditemukan.
+      description: Not Found
       content:
         application/json:
           schema:
@@ -2308,17 +1548,9 @@ components:
               message:
                 type: string
                 example: "Resource not found."
-              data:
-                nullable: true
-                example: null
-
     ValidationError:
-      description: Validasi input gagal.
+      description: Validation Error
       content:
         application/json:
           schema:
-<<<<<<< Updated upstream
-            $ref: '#/components/schemas/ValidationErrorResponse'
-=======
             $ref: "#/components/schemas/ValidationErrorResponse"
->>>>>>> Stashed changes
