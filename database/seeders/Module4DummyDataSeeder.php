@@ -10,10 +10,25 @@ class Module4DummyDataSeeder extends Seeder
 {
     public function run()
     {
-        // Ambil data referensi dari modul lain
-        $publishers = DB::table('users')->where('role', 'penerbit')->get();
-        $authors = DB::table('users')->where('role', 'penulis')->get();
-        $reviewers = DB::table('users')->where('role', 'reviewer')->get();
+        // Ambil data referensi dari modul lain dengan JOIN ke roles
+        $publishers = DB::table('users')
+            ->join('roles', 'users.role_id', '=', 'roles.id')
+            ->where('roles.name', 'penerbit')
+            ->select('users.*')
+            ->get();
+        
+        $authors = DB::table('users')
+            ->join('roles', 'users.role_id', '=', 'roles.id')
+            ->where('roles.name', 'penulis')
+            ->select('users.*')
+            ->get();
+        
+        $reviewers = DB::table('users')
+            ->join('roles', 'users.role_id', '=', 'roles.id')
+            ->where('roles.name', 'reviewer')
+            ->select('users.*')
+            ->get();
+        
         $manuscripts = DB::table('manuscripts')->get();
         $reviewSubmissions = DB::table('review_submissions')->get();
 
@@ -83,7 +98,11 @@ class Module4DummyDataSeeder extends Seeder
         $statuses = ['active', 'completed', 'expired'];
         $deadlines = [];
         foreach ($manuscripts->take(10) as $manuscript) {
-            $assignee = (rand(0, 1) && $reviewers->isNotEmpty()) ? $reviewers->random() : $authors->random();
+            $assignee = $authors->isNotEmpty() ? $authors->random() : null;
+            if ($reviewers->isNotEmpty() && rand(0,1)) {
+                $assignee = $reviewers->random();
+            }
+            if (!$assignee) continue;
             $deadlines[] = [
                 'manuscript_id' => $manuscript->id,
                 'assignee_id' => $assignee->id,
@@ -101,7 +120,7 @@ class Module4DummyDataSeeder extends Seeder
         // 4. Notification Logs
         // ==========================================
         $templatesDb = DB::table('notification_templates')->get();
-        $users = DB::table('users')->get();
+        $users = DB::table('users')->get(); // Semua user
         $statusesNotif = ['pending', 'sent', 'failed'];
         $logs = [];
         for ($i = 0; $i < 50; $i++) {
