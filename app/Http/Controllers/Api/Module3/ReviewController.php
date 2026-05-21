@@ -5,125 +5,133 @@ namespace App\Http\Controllers\Api\Module3;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Module3\SubmitReviewRequest;
 use App\Http\Resources\CompiledReviewResource;
+use App\Models\Manuscript;
+use App\Models\ReviewSubmission;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
 
 class ReviewController extends Controller
 {
     /**
      * Submit Review Result
+     *
+     * Menyimpan skor per kriteria, naratif feedback, dan mengupdate status review.
      */
     public function submitReview(SubmitReviewRequest $request, int $manuscriptId): JsonResponse
     {
-        $validated = $request->validated();
-        
-        // 1. Cari data penugasan review (ReviewSubmission) untuk reviewer yang sedang login
-        $reviewerId = auth('sanctum')->id() ?? \App\Models\User::where('role_id', 3)->first()->id; // Sesuaikan role_id reviewer
-        
+        $reviewerId = auth()->id();
+
+        if (!$reviewerId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthenticated.',
+            ], 401);
+        }
+
+        // Cari penugasan reviewer yang masih pending atau under_review
         $submission = ReviewSubmission::where('manuscript_id', $manuscriptId)
             ->where('reviewer_id', $reviewerId)
-            ->firstOrFail();
+            ->whereIn('status', ['pending', 'under_review'])
+            ->first();
 
-        // 2. Gunakan Database Transaction agar jika salah satu insert gagal, database tidak corrupt
+        if (!$submission) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tidak ada penugasan review yang aktif untuk naskah ini.',
+            ], 404);
+        }
+
+        $validated = $request->validated();
+
         DB::transaction(function () use ($validated, $submission, $manuscriptId) {
-            
-            // Loop data nilai rubrik dari request dan simpan ke tabel review_scores
+            // 1. Simpan skor per kriteria ke tabel review_scores
             foreach ($validated['rubric_scores'] as $scoreData) {
                 DB::table('review_scores')->insert([
-                    'rs_id' => $submission->id, // Berelasi ke review_submissions
-                    'rubric_id' => $scoreData['criteria_id'],
-                    'score' => $scoreData['score'],
-                    'created_at' => now(),
-                    'updated_at' => now()
+                    'rs_id'      => $submission->id,
+                    'rubric_id'  => $scoreData['criteria_id'],
+                    'nilai'      => $scoreData['score'], // kolom 'nilai' sesuai database
                 ]);
             }
 
-            // Simpan catatan naratif/kesimpulan ke tabel review_outcomes (sesuai skema SQL kamu)
-            DB::table('review_outcomes')->insert([
-                'rs_id' => $submission->id,
-                'rubric_id' => $validated['rubric_scores'][0]['criteria_id'], // Atau sesuaikan FK database kamu
-                'score_id' => null, // Jika opsional
-                'feedback_text' => $validated['narrative_feedback'],
-                'created_at' => now(),
-                'updated_at' => now()
+            // 2. Simpan narrative feedback ke tabel review_comments
+            DB::table('review_comments')->insert([
+                'rs_id'   => $submission->id,
+                'comment' => $validated['narrative_feedback'],
             ]);
 
-            // 3. Update status penugasan reviewer menjadi 'review_completed'
+            // 3. Update status penugasan reviewer
             $submission->update(['status' => 'review_completed']);
 
-            // 4. Cek apakah semua reviewer untuk naskah ini sudah selesai menilai
+            // 4. Cek apakah semua reviewer untuk naskah ini sudah selesai
             $totalReviewers = ReviewSubmission::where('manuscript_id', $manuscriptId)->count();
             $completedReviewers = ReviewSubmission::where('manuscript_id', $manuscriptId)
                 ->where('status', 'review_completed')
                 ->count();
 
-            // Jika semua reviewer sudah submit, ubah status naskah utama menjadi 'review_completed'
             if ($totalReviewers === $completedReviewers) {
-                Manuscript::where('id', $manuscriptId)->update([
-                    'status' => 'review_completed'
-                ]);
+                Manuscript::where('id', $manuscriptId)->update(['status' => 'review_completed']);
             }
         });
 
         return response()->json([
             'success' => true,
-            'message' => 'Review berhasil disimpan ke database dan status diperbarui.',
+            'message' => 'Review berhasil disimpan.',
             'data' => [
                 'manuscript_id' => $manuscriptId,
-                'status' => 'review_completed'
-            ]
+                'status'        => 'review_completed',
+            ],
         ]);
     }
 
     /**
-     * Get Compiled Reviews (Mengambil akumulasi nilai riil dari database)
+     * Get Compiled Reviews
+     *
+     * Mengambil rata-rata skor dan semua feedback untuk sebuah naskah.
      */
     public function getCompiledReviews(int $manuscriptId): JsonResponse
     {
         $manuscript = Manuscript::findOrFail($manuscriptId);
 
-        // 1. Hitung rata-rata nilai dari seluruh reviewer untuk naskah ini
+        // Hitung rata-rata skor dari semua reviewer (kolom 'nilai')
         $averageScore = DB::table('review_submissions')
-            ->join('review_scores', 'review_submissions::id', '=', 'review_scores.rs_id')
+            ->join('review_scores', 'review_submissions.id', '=', 'review_scores.rs_id')
             ->where('review_submissions.manuscript_id', $manuscriptId)
-            ->avg('review_scores.score');
+            ->avg('review_scores.nilai');
 
-        // 2. Ambil semua catatan feedback naratif dari tabel review_outcomes
+        // Ambil semua feedback naratif dari review_comments (anonim)
         $feedbacks = DB::table('review_submissions')
-            ->join('users', 'review_submissions.reviewer_id', '=', 'users.id')
-            ->join('review_outcomes', 'review_submissions.id', '=', 'review_outcomes.rs_id')
+            ->join('review_comments', 'review_submissions.id', '=', 'review_comments.rs_id')
             ->where('review_submissions.manuscript_id', $manuscriptId)
-            ->select('users.name as reviewer_name', 'review_outcomes.feedback_text')
+            ->select('review_comments.comment')
             ->get()
-            ->map(function($item, $index) {
+            ->map(function ($item, $index) {
                 return [
-                    'reviewer_alias' => 'Reviewer ' . ($index + 1), // Anonimitas reviewer sesuai standar double-blind review
-                    'feedback' => $item->feedback_text
+                    'reviewer_alias' => 'Reviewer ' . ($index + 1),
+                    'feedback'       => $item->comment,
                 ];
             });
 
-        // 3. Tentukan rekomendasi keputusan sistem berdasarkan nilai rata-rata
-        $decision = 'requires_major_revision';
+        // Tentukan keputusan berdasarkan rata-rata (contoh aturan)
+        $decision = 'rejected';
         if ($averageScore >= 80) {
             $decision = 'accepted_with_minor_revisions';
         } elseif ($averageScore >= 60) {
             $decision = 'requires_major_revision';
-        } else {
-            $decision = 'rejected';
         }
 
         $compiled = [
-            'manuscript_id' => $manuscriptId,
-            'title' => $manuscript->title,
-            'average_score' => round($averageScore, 2),
-            'decision' => $decision,
+            'manuscript_id'      => $manuscriptId,
+            'title'              => $manuscript->title,
+            'average_score'      => round($averageScore, 2),
+            'decision'           => $decision,
             'reviewer_feedbacks' => $feedbacks,
-            'compiled_at' => now()->toIso8601String()
+            'compiled_at'        => now()->toIso8601String(),
         ];
 
         return response()->json([
             'success' => true,
-            'message' => 'Kompilasi review berhasil dihitung dari database.',
-            'data' => new \App\Http\Resources\CompiledReviewResource($compiled)
+            'message' => 'Kompilasi review berhasil diambil.',
+            'data'    => new CompiledReviewResource($compiled),
         ]);
     }
 }
