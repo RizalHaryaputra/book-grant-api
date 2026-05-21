@@ -15,15 +15,15 @@ class AuthorConfirmationController extends Controller
 {
     public function store(Request $request)
     {
-        // 1. Validasi Input
+        // 1. Validasi Input (Disesuaikan dengan ERD baru)
         $validator = Validator::make($request->all(), [
             'name' => 'required|string',
             'email' => 'required|email|unique:users,email',
             'institution' => 'required|string',
             'book_title' => 'required|string',
-            // Sesuaikan kapitalisasinya dengan ENUM database
-            'book_type' => 'required|in:Buku Ajar,Buku Referensi', 
-            'ai_ethics_agreed' => 'boolean'
+            'book_type' => 'required|in:buku ajar,buku referensi', 
+            'ai_ethics_agreed' => 'boolean',
+            'willingness_statement' => 'boolean' 
         ]);
 
         if ($validator->fails()) {
@@ -36,24 +36,27 @@ class AuthorConfirmationController extends Controller
 
         try {
             $result = DB::transaction(function () use ($request) {
+                // Generate password acak 8 karakter
                 $rawPassword = Str::password(8, true, true, true, false);
 
+                // a. Buat akun User
                 $user = User::create([
-                    'role_id' => 2, 
+                    'role_id' => 2, // 2 = Penulis
                     'name' => $request->name,
                     'email' => $request->email,
                     'password' => Hash::make($rawPassword),
                     'is_active' => true,
                 ]);
 
-                // c. Buat Profil Penulis (Mapping dari request ke kolom DB)
+                // b. Buat Profil Penulis (Mapping dari request ke kolom DB terbaru)
                 $author = AuthorProfile::create([
                     'user_id' => $user->id,
-                    'institutions' => $request->institution,      // Mapping ke 'institutions'
+                    'institution' => $request->institution,      
                     'book_title' => $request->book_title,
                     'book_type' => $request->book_type,
-                    'at_ethics_agreed' => $request->ai_ethics_agreed ?? true, // Mapping ke 'at_ethics_agreed'
-                    'status' => 'active', // Ganti jadi 'active' biar cocok dengan ENUM DB
+                    'ai_ethics_agreed' => $request->ai_ethics_agreed ?? true, // Sudah diperbaiki jadi 'ai'
+                    'willingness_statement' => $request->willingness_statement ?? true, // Sesuaikan ERD
+                    'status' => 'account_created', // Status awal sesuai alur ERD baru
                 ]);
 
                 return [
@@ -63,6 +66,7 @@ class AuthorConfirmationController extends Controller
                 ];
             });
 
+            // 3. Kirim Email Notifikasi via Server Modul 4 (Port 8001)
             try {
                 $response = Http::post('http://127.0.0.1:8001/api/notification/send', [
                     'to' => $result['user']->email,
@@ -83,7 +87,7 @@ class AuthorConfirmationController extends Controller
                     ], 201);
                 }
             } catch (\Exception $e) {
-                // Email gagal
+                // Biarkan kosong agar tetap masuk ke response 202 jika email gagal
             }
 
             return response()->json([

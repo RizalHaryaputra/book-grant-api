@@ -6,17 +6,15 @@ use Illuminate\Database\Eloquent\Model;
 
 class AuthorProfile extends Model
 {
-    protected $table = 'authors_profile';
+    protected $table = 'author_profiles'; 
 
-    // Sesuaikan persis dengan nama kolom di phpMyAdmin
     protected $fillable = [
         'user_id',
-        'institutions',       
+        'institution', 
         'book_title',
         'book_type',
-        'at_ethics_agreed',   
-        'willingness_status', // sesuaikan DB
-        'status',
-        'uploaded_at'
+        'ai_ethics_agreed',   
+        'willingness_statement', 
+        'status'
     ];
 }
