@@ -10,14 +10,15 @@ return new class extends Migration
      * Run the migrations.
      */
     public function up(): void
-    {
-        Schema::create('roles', function (Blueprint $table) {
-            $table->id();
-            // Mengikuti role di dokumen API YAML
-            $table->enum('name', ['admin', 'penulis', 'reviewer', 'penerbit']);
-            $table->timestamps();
-        });
-    }
+   {
+       Schema::create('roles', function (Blueprint $table) {
+           $table->id();
+           $table->string('name')->unique(); // Contoh: admin, author, reviewer, publisher
+           $table->string('description')->nullable();
+           $table->timestamps();
+       });
+   }
+
     /**
      * Reverse the migrations.
      */

@@ -12,6 +12,24 @@ use Illuminate\Support\Facades\Validator;
 
 class AdminUserController extends Controller
 {
+    // ==========================================
+    // TAMBAHAN BARU: Fungsi untuk mengambil data (GET)
+    // ==========================================
+    public function index()
+    {
+        // Menambahkan 'authorProfile' ke dalam array with()
+        $users = User::with(['role', 'authorProfile'])->get();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Berhasil mengambil data seluruh pengguna beserta profil penulis.',
+            'data' => $users
+        ], 200);
+    }
+
+    // ==========================================
+    // FUNGSI LAMA: Membuat akun baru (POST)
+    // ==========================================
     public function store(Request $request)
     {
         // 1. Validasi Input

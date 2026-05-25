@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('authors_profile', function (Blueprint $table) {
+        Schema::create('author_profiles', function (Blueprint $table) {
             $table->id();
             // Nullable karena proses auto-generate akun terjadi bersamaan
             $table->foreignId('user_id')->nullable()->unique()->constrained('users')->onUpdate('cascade')->onDelete('cascade');

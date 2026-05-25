@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('contracts', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('author_profile_id')->constrained('authors_profile')->onUpdate('cascade')->onDelete('restrict');
+            $table->foreignId('author_profile_id')->constrained('author_profiles')->onUpdate('cascade')->onDelete('restrict');
             
             // Relasi ke tabel kelompok 3 (Naskah)
             $table->unsignedBigInteger('manuscript_id')->nullable()->unique();

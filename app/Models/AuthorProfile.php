@@ -17,4 +17,10 @@ class AuthorProfile extends Model
         'willingness_statement', 
         'status'
     ];
+
+// Relasi balik ke tabel users (AuthorProfile ini milik User siapa?)
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'user_id', 'id');
+    }
 }
