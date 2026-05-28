@@ -13,4 +13,7 @@ Route::prefix('author')->group(function () {
     
     // [Fitur 2] Upload Dokumen Administrasi 
     Route::post('/manuscripts/{manuscriptId}/documents', [ManuscriptController::class, 'uploadDocument']);
+
+    // [Fitur 4] Melihat Hasil Review
+    Route::get('/manuscripts/{manuscriptId}/reviews', [ManuscriptController::class, 'reviews']);
 });
