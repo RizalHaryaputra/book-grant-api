@@ -10,7 +10,6 @@ class NotificationLog extends Model
     use HasUuids;
 
     protected $table = 'notification_logs';
-
     protected $fillable = [
         'template_id',
         'recipient_id',
@@ -19,10 +18,11 @@ class NotificationLog extends Model
         'subject',
         'status',
         'sent_at',
-        'error_message'
+        'error_message',
+        'created_at'   // <-- TAMBAHKAN INI
     ];
 
     protected $keyType = 'string';
-
     public $incrementing = false;
+    public $timestamps = false; // <-- KARENA HANYA ADA created_at (tidak ada updated_at)
 }
