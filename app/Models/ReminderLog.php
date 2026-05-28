@@ -10,17 +10,18 @@ class ReminderLog extends Model
     use HasUuids;
 
     protected $table = 'reminder_logs';
-
+    
     protected $fillable = [
         'deadline_id',
         'recipient_id',
         'days_before',
         'sent_at',
         'success',
-        'error_message'
+        'error_message',
+        'created_at'   // TAMBAHKAN INI
     ];
 
     protected $keyType = 'string';
-
     public $incrementing = false;
+    public $timestamps = false; // KARENA TABEL HANYA PUNYA created_at (tanpa updated_at)
 }
