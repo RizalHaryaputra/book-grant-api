@@ -143,11 +143,18 @@ class ReviewerManuscriptController extends Controller
         }
 
         $existingScores = [];
+        $existingOutcome = null;
+        $existingComment = null;
+
         if ($assignment->status === 'review_completed') {
             $scores = DB::table('review_scores')->where('rs_id', $assignment->id)->get();
             foreach ($scores as $score) {
                 $existingScores[$score->rubric_id] = $score->nilai;
             }
+
+            $existingOutcome = DB::table('review_outcomes')->where('rs_id', $assignment->id)->first();
+            $commentRow = DB::table('review_comments')->where('rs_id', $assignment->id)->first();
+            $existingComment = $commentRow ? $commentRow->comment : null;
         }
 
         $manuscript = Manuscript::findOrFail($manuscriptId);
@@ -162,14 +169,24 @@ class ReviewerManuscriptController extends Controller
                 'aspect' => $row->criteria,
                 'description' => $row->description,
                 'max_score' => $row->weight,
-                'previous_score' => $existingScores[$row->id] ?? null
+                'submitted_score' => $existingScores[$row->id] ?? null
             ]);
 
-        return response()->json([
+        $response = [
             'success' => true,
             'message' => 'Rubrik berhasil diambil.',
-            'data' => ReviewRubricResource::collection($rubricData)
-        ]);
+            'data'    => ReviewRubricResource::collection($rubricData)
+        ];
+
+        if ($assignment->status === 'review_completed') {
+            $response['submitted_review'] = [
+                'final_score'   => $existingOutcome ? round($existingOutcome->overall_score, 2) : null,
+                'status'        => $existingOutcome ? ($existingOutcome->status ? 'accepted' : 'rejected') : null,
+                'feedback'      => $existingComment
+            ];
+        }
+
+        return response()->json($response);
     }
 
     /**
