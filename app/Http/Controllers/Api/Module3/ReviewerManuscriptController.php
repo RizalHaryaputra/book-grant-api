@@ -131,15 +131,23 @@ class ReviewerManuscriptController extends Controller
             ], 403);
         }
 
-        // Optional: Cek apakah reviewer assigned ke naskah ini
         $assignment = ReviewSubmission::where('reviewer_id', $reviewer->id)
             ->where('manuscript_id', $manuscriptId)
-            ->exists();
+            ->first();
+            
         if (!$assignment) {
             return response()->json([
                 'success' => false,
                 'message' => 'Access denied. You are not assigned to this manuscript.'
             ], 401);
+        }
+
+        $existingScores = [];
+        if ($assignment->status === 'review_completed') {
+            $scores = DB::table('review_scores')->where('rs_id', $assignment->id)->get();
+            foreach ($scores as $score) {
+                $existingScores[$score->rubric_id] = $score->nilai;
+            }
         }
 
         $manuscript = Manuscript::findOrFail($manuscriptId);
@@ -153,7 +161,8 @@ class ReviewerManuscriptController extends Controller
                 'criteria_id' => $row->id,
                 'aspect' => $row->criteria,
                 'description' => $row->description,
-                'max_score' => $row->weight
+                'max_score' => $row->weight,
+                'previous_score' => $existingScores[$row->id] ?? null
             ]);
 
         return response()->json([

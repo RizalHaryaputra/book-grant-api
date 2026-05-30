@@ -92,11 +92,17 @@ class ReviewController extends Controller
     {
         $manuscript = Manuscript::findOrFail($manuscriptId);
 
-        // Hitung rata-rata skor dari semua reviewer (kolom 'nilai')
-        $averageScore = DB::table('review_submissions')
+        // Hitung rata-rata skor tertimbang dari semua reviewer (nilai × bobot rubrik)
+        $weightedResult = DB::table('review_submissions')
             ->join('review_scores', 'review_submissions.id', '=', 'review_scores.rs_id')
+            ->join('assessment_rubric', 'review_scores.rubric_id', '=', 'assessment_rubric.id')
             ->where('review_submissions.manuscript_id', $manuscriptId)
-            ->avg('review_scores.nilai');
+            ->selectRaw('SUM(review_scores.nilai * assessment_rubric.weight) as weighted_sum, SUM(assessment_rubric.weight) as total_weight')
+            ->first();
+
+        $finalScore = ($weightedResult && $weightedResult->total_weight > 0)
+            ? $weightedResult->weighted_sum / $weightedResult->total_weight
+            : 0;
 
         // Ambil semua feedback naratif dari review_comments (anonim)
         $feedbacks = DB::table('review_submissions')
@@ -111,18 +117,13 @@ class ReviewController extends Controller
                 ];
             });
 
-        // Tentukan keputusan berdasarkan rata-rata (contoh aturan)
-        $decision = 'rejected';
-        if ($averageScore >= 80) {
-            $decision = 'accepted_with_minor_revisions';
-        } elseif ($averageScore >= 60) {
-            $decision = 'requires_major_revision';
-        }
+        // Keputusan: diterima jika skor tertimbang >= 75, ditolak jika di bawahnya
+        $decision = $finalScore >= 75 ? 'accepted' : 'rejected';
 
         $compiled = [
             'manuscript_id'      => $manuscriptId,
             'title'              => $manuscript->title,
-            'average_score'      => round($averageScore, 2),
+            'final_score'        => round($finalScore, 2),
             'decision'           => $decision,
             'reviewer_feedbacks' => $feedbacks,
             'compiled_at'        => now()->toIso8601String(),
