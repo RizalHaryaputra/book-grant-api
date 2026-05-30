@@ -18,20 +18,16 @@ class UpdateManuscriptStatus implements ShouldQueue
 
     public function handle(DecisionMade $event): void
     {
-        $publisherDecision = $event->publisherDecision;
-
-        // Ambil check_id dari publisher_checks
-        $publisherCheck = $publisherDecision->check;
+        $publisherCheck = $event->publisherCheck;
         $manuscriptId = $publisherCheck->manuscript_id;
 
-        // Tentukan status baru berdasarkan keputusan
-        $status = $publisherDecision->decision === 'approved' ? 'ready_to_print' : 'publisher_revised';
-        $notes = $publisherDecision->decision === 'revised' ? $publisherDecision->revision_notes : null;
+        $status = $publisherCheck->decision === 'approved' ? 'ready_to_print' : 'publisher_revised';
+        $notes = $event->revisionNotes;
 
         $success = $this->manuscriptService->updateManuscriptStatus($manuscriptId, $status, $notes);
 
         if (!$success) {
-            Log::warning("Gagal mengupdate status manuskrip {$manuscriptId} dari Kelompok 2.");
+            Log::warning("Gagal mengupdate status manuskrip {$manuscriptId} dari Kelompok 2/3.");
         }
     }
 }

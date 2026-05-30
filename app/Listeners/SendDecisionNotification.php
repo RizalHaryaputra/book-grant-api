@@ -19,28 +19,30 @@ class SendDecisionNotification implements ShouldQueue
 
     public function handle(DecisionMade $event): void
     {
-        $publisherDecision = $event->publisherDecision;
+        $publisherCheck = $event->publisherCheck;
+        $revisionNotes = $event->revisionNotes;
 
-        // Ambil informasi naskah dan penulis
-        $publisherCheck = $publisherDecision->check;
         $manuscript = Manuscript::find($publisherCheck->manuscript_id);
+        if (!$manuscript) return;
+
         $author = User::find($manuscript->author_id);
+        if (!$author) return;
 
-        // Tentukan subject dan body email
-        $subject = $publisherDecision->decision === 'approved' ? 'Selamat! Naskah Anda Disetujui' : 'Naskah Anda Memerlukan Revisi';
-        $body = $publisherDecision->decision === 'approved' 
-            ? "Naskah Anda telah disetujui oleh penerbit dan siap untuk proses cetak." 
-            : "Naskah Anda memerlukan revisi. Catatan: {$publisherDecision->revision_notes}";
+        $subject = $publisherCheck->decision === 'approved'
+            ? 'Selamat! Naskah Anda Disetujui'
+            : 'Naskah Anda Memerlukan Revisi';
 
-        // Siapkan request palsu untuk controller
+        $body = $publisherCheck->decision === 'approved'
+            ? "Naskah Anda telah disetujui oleh penerbit dan siap untuk proses cetak."
+            : "Naskah Anda memerlukan revisi. Catatan: " . ($revisionNotes ?? 'Tidak ada catatan.');
+
         $request = request()->merge([
             'to' => $author->email,
             'subject' => $subject,
             'body' => $body,
-            'type' => $publisherDecision->decision === 'approved' ? 'publisher_approved' : 'publisher_revised',
+            'type' => $publisherCheck->decision === 'approved' ? 'publisher_approved' : 'publisher_revised',
         ]);
 
-        // Panggil controller notifikasi
         $this->notificationController->send($request);
     }
 }

@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\SendNotificationRequest;
 use App\Models\NotificationLog;
-use App\Models\NotificationTemplate;
 use App\Models\User;
 use App\Services\EmailService;
 use Illuminate\Http\Request;
@@ -19,32 +18,28 @@ class NotificationController extends Controller
         $this->emailService = $emailService;
     }
 
-    // POST /notification/send
+    /**
+     * POST /notification/send
+     */
     public function send(SendNotificationRequest $request)
     {
         $data = $request->validated();
 
-        $template = NotificationTemplate::where('event_type', $data['type'])->first();
-        if (!$template) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Template notifikasi tidak ditemukan'
-            ], 400);
-        }
-
         $emailResult = $this->emailService->send($data['to'], $data['subject'], $data['body']);
         $recipient = User::where('email', $data['to'])->first();
 
+        // Simpan langsung ke notification_log tanpa template
         NotificationLog::create([
-            'template_id' => $template->id,
-            'recipient_id' => $recipient ? $recipient->id : null,
-            'manuscript_id' => null,
-            'email_to' => $data['to'],
-            'subject' => $data['subject'],
-            'status' => $emailResult['success'] ? 'sent' : 'failed',
-            'sent_at' => $emailResult['success'] ? now() : null,
-            'error_message' => $emailResult['error'],
-            'created_at' => now()
+            'recipient_id'   => $recipient ? $recipient->id : null,
+            'manuscript_id'  => null, // bisa diisi jika ada konteks manuscript
+            'rs_id'          => null, // bisa diisi jika ada konteks review submission
+            'event_type'     => $data['type'],
+            'email_to'       => $data['to'],
+            'subject'        => $data['subject'],
+            'body_html'      => $data['body'],
+            'status'         => $emailResult['success'] ? 'sent' : 'failed',
+            'sent_at'        => $emailResult['success'] ? now() : null,
+            'error_message'  => $emailResult['error'],
         ]);
 
         $response = [
@@ -60,13 +55,15 @@ class NotificationController extends Controller
         return response()->json($response, $emailResult['success'] ? 200 : 500);
     }
 
-    // GET /admin/notification-logs
+    /**
+     * GET /admin/notification-logs
+     */
     public function logs(Request $request)
     {
-        $query = NotificationLog::with('template');
+        $query = NotificationLog::query();
 
         if ($request->has('type')) {
-            $query->whereHas('template', fn($q) => $q->where('event_type', $request->type));
+            $query->where('event_type', $request->type);
         }
         if ($request->has('status')) {
             $query->where('status', $request->status);
@@ -80,7 +77,7 @@ class NotificationController extends Controller
             return [
                 'id' => $log->id,
                 'recipient' => $log->email_to,
-                'type' => $log->template->event_type ?? null,
+                'type' => $log->event_type,
                 'subject' => $log->subject,
                 'status' => $log->status,
                 'sent_at' => $log->sent_at,
