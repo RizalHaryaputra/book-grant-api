@@ -5,56 +5,133 @@ namespace App\Http\Controllers\Api\Module3;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Module3\SubmitReviewRequest;
 use App\Http\Resources\CompiledReviewResource;
+use App\Models\Manuscript;
+use App\Models\ReviewSubmission;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
 
 class ReviewController extends Controller
 {
     /**
      * Submit Review Result
+     *
+     * Menyimpan skor per kriteria, naratif feedback, dan mengupdate status review.
      */
     public function submitReview(SubmitReviewRequest $request, int $manuscriptId): JsonResponse
     {
-        // Mock successful submission
+        $reviewerId = auth()->id();
+
+        if (!$reviewerId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthenticated.',
+            ], 401);
+        }
+
+        // Cari penugasan reviewer yang masih pending atau under_review
+        $submission = ReviewSubmission::where('manuscript_id', $manuscriptId)
+            ->where('reviewer_id', $reviewerId)
+            ->whereIn('status', ['pending', 'under_review'])
+            ->first();
+
+        if (!$submission) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tidak ada penugasan review yang aktif untuk naskah ini.',
+            ], 404);
+        }
+
+        $validated = $request->validated();
+
+        DB::transaction(function () use ($validated, $submission, $manuscriptId) {
+            // 1. Simpan skor per kriteria ke tabel review_scores
+            foreach ($validated['rubric_scores'] as $scoreData) {
+                DB::table('review_scores')->insert([
+                    'rs_id'      => $submission->id,
+                    'rubric_id'  => $scoreData['criteria_id'],
+                    'nilai'      => $scoreData['score'], // kolom 'nilai' sesuai database
+                ]);
+            }
+
+            // 2. Simpan narrative feedback ke tabel review_comments
+            DB::table('review_comments')->insert([
+                'rs_id'   => $submission->id,
+                'comment' => $validated['narrative_feedback'],
+            ]);
+
+            // 3. Update status penugasan reviewer
+            $submission->update(['status' => 'review_completed']);
+
+            // 4. Cek apakah semua reviewer untuk naskah ini sudah selesai
+            $totalReviewers = ReviewSubmission::where('manuscript_id', $manuscriptId)->count();
+            $completedReviewers = ReviewSubmission::where('manuscript_id', $manuscriptId)
+                ->where('status', 'review_completed')
+                ->count();
+
+            if ($totalReviewers === $completedReviewers) {
+                Manuscript::where('id', $manuscriptId)->update(['status' => 'review_completed']);
+            }
+        });
+
         return response()->json([
             'success' => true,
-            'message' => 'Review berhasil dikirim.',
+            'message' => 'Review berhasil disimpan.',
             'data' => [
                 'manuscript_id' => $manuscriptId,
-                'status' => 'review_completed'
-            ]
+                'status'        => 'review_completed',
+            ],
         ]);
     }
 
     /**
      * Get Compiled Reviews
+     *
+     * Mengambil rata-rata skor dan semua feedback untuk sebuah naskah.
      */
     public function getCompiledReviews(int $manuscriptId): JsonResponse
     {
-        // Mock compiled review
+        $manuscript = Manuscript::findOrFail($manuscriptId);
+
+        // Hitung rata-rata skor dari semua reviewer (kolom 'nilai')
+        $averageScore = DB::table('review_submissions')
+            ->join('review_scores', 'review_submissions.id', '=', 'review_scores.rs_id')
+            ->where('review_submissions.manuscript_id', $manuscriptId)
+            ->avg('review_scores.nilai');
+
+        // Ambil semua feedback naratif dari review_comments (anonim)
+        $feedbacks = DB::table('review_submissions')
+            ->join('review_comments', 'review_submissions.id', '=', 'review_comments.rs_id')
+            ->where('review_submissions.manuscript_id', $manuscriptId)
+            ->select('review_comments.comment')
+            ->get()
+            ->map(function ($item, $index) {
+                return [
+                    'reviewer_alias' => 'Reviewer ' . ($index + 1),
+                    'feedback'       => $item->comment,
+                ];
+            });
+
+        // Tentukan keputusan berdasarkan rata-rata (contoh aturan)
+        $decision = 'rejected';
+        if ($averageScore >= 80) {
+            $decision = 'accepted_with_minor_revisions';
+        } elseif ($averageScore >= 60) {
+            $decision = 'requires_major_revision';
+        }
+
         $compiled = [
-            'manuscript_id' => $manuscriptId,
-            'title' => 'Buku Ajar Pemrograman Lanjut',
-            'average_score' => 82.5,
-            'decision' => 'accepted_with_minor_revisions',
-            'reviewer_feedbacks' => [
-                [
-                    'reviewer_alias' => 'Reviewer 1',
-                    'score' => 85,
-                    'feedback' => 'Materi bagus, tambahkan latihan soal.'
-                ],
-                [
-                    'reviewer_alias' => 'Reviewer 2',
-                    'score' => 80,
-                    'feedback' => 'Beberapa paragraf kurang jelas, perbaiki tata bahasa.'
-                ]
-            ],
-            'compiled_at' => '2026-05-22T09:00:00Z'
+            'manuscript_id'      => $manuscriptId,
+            'title'              => $manuscript->title,
+            'average_score'      => round($averageScore, 2),
+            'decision'           => $decision,
+            'reviewer_feedbacks' => $feedbacks,
+            'compiled_at'        => now()->toIso8601String(),
         ];
 
         return response()->json([
             'success' => true,
             'message' => 'Kompilasi review berhasil diambil.',
-            'data' => new CompiledReviewResource($compiled)
+            'data'    => new CompiledReviewResource($compiled),
         ]);
     }
 }
