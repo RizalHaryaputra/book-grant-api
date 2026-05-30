@@ -713,7 +713,7 @@ paths:
       description: |
         Menampilkan ringkasan tugas penerbit:
         - jumlah naskah pra-cetak (status 'preprint')
-        - jumlah approved bulan ini (dari publisher_decisions)
+        - jumlah approved bulan ini (dari publisher_checks.decision)
         - jumlah revised bulan ini
         - daftar 5 naskah pra-cetak terbaru dengan tautan
       tags:
@@ -938,6 +938,10 @@ paths:
                             type: boolean
                           notes:
                             type: string
+                          decision:
+                            type: string
+                            enum: [approved, revised]
+                            nullable: true
                   _links:
                     type: object
                     properties:
@@ -1041,9 +1045,9 @@ paths:
       summary: Publisher Decision
       description: |
         Memberikan keputusan akhir penerbit (approved / revised).
-        Data disimpan di tabel `publisher_decisions`.
-        Wajib menyertakan `check_id` (foreign key ke publisher_checks) 
-        yang diperoleh dari pemeriksaan sebelumnya.
+        Data keputusan (decision) disimpan di tabel `publisher_checks`.
+        Jika keputusan adalah 'revised', catatan revisi (revision_notes) akan dikirim ke Modul 2 (Manajemen Naskah) untuk ditampilkan kepada penulis.
+        Wajib menyertakan `check_id` (foreign key ke publisher_checks) yang diperoleh dari pemeriksaan sebelumnya.
       tags:
         - Modul 4 - Penerbit, Pra-Cetak, & Monitoring (Kelompok 1)
       security:
@@ -1066,7 +1070,7 @@ paths:
                   enum: [approved, revised]
                 revision_notes:
                   type: string
-                  description: Wajib diisi jika decision = revised.
+                  description: Catatan revisi (wajib diisi jika decision = revised). Akan diteruskan ke Modul 2.
       responses:
         "200":
           description: Keputusan berhasil disimpan.
@@ -1084,6 +1088,7 @@ paths:
                     properties:
                       decision_id:
                         type: integer
+                        description: ID dari publisher_checks yang diupdate.
                       status:
                         type: string
                   _links:
@@ -1121,10 +1126,10 @@ paths:
       summary: Admin Dashboard Statistics
       description: |
         Ringkasan statistik yang dihitung dari berbagai tabel:
-        - total_penulis: count users where role = 'penulis'
+        - total_penulis: count users where role = 'penulis' (melalui join roles)
         - total_kontrak_valid: count contracts status 'validated'
         - total_draft_masuk: count manuscripts status 'initial_draft_uploaded'
-        - total_review_berjalan: count review_submissions status 'in_progress'
+        - total_review_berjalan: count review_submissions status 'under_review'
         - total_revisi: count manuscripts status 'revision_uploaded'
         - total_pracetak: count manuscripts status 'preprint'
         - total_siap_cetak: count manuscripts status 'ready_to_print'
@@ -1181,7 +1186,7 @@ paths:
       summary: Get Notification Logs
       description: |
         Riwayat pengiriman email yang tersimpan di tabel `notification_log`.
-        Data `type` sebenarnya berasal dari `notification_templates.event_type` melalui join.
+        Data `type` diambil dari kolom `event_type`.
         Mendukung filter dan pagination.
       tags:
         - Modul 4 - Penerbit, Pra-Cetak, & Monitoring (Kelompok 1)
@@ -1288,7 +1293,7 @@ paths:
       summary: Send Email Notification
       description: |
         Endpoint internal untuk mengirim email.
-        Request berisi `type` (event_type) yang akan dicocokkan dengan `notification_templates`.
+        Request berisi `type` (event_type) yang akan dicatat di `notification_log`.
         Setelah berhasil, log disimpan di `notification_log`.
       tags:
         - Modul 4 - Penerbit, Pra-Cetak, & Monitoring (Kelompok 1)
@@ -1364,7 +1369,8 @@ paths:
       summary: Trigger Reminder Manually
       description: |
         Menjalankan cron reminder secara manual.
-        Membaca tabel `deadlines` dan `reminder_logs` untuk mengirim pengingat.
+        Membaca tabel `deadlines` untuk mengirim pengingat.
+        (Catatan: Skema SQL tidak menyediakan tabel reminder_logs; reminder tetap dijalankan berdasarkan deadlines.)
       tags:
         - Modul 4 - Penerbit, Pra-Cetak, & Monitoring (Kelompok 1)
       security:
@@ -1418,12 +1424,11 @@ components:
           example: true
         message:
           type: string
-          description: Success message. (Pesan sukses.)
-          example: "Operation successful. (Operasi berhasil.)"
+          description: Success message.
+          example: "Operation successful."
         data:
-          type: object
           nullable: true
-          example: null
+
     SuccessResponseObject:
       type: object
       properties:
@@ -1432,10 +1437,10 @@ components:
           example: true
         message:
           type: string
-          example: "Data retrieved successfully. (Data berhasil diambil.)"
+          example: "Data retrieved successfully."
         data:
           type: object
-          example: { id: 1, status: "review_completed" }
+
     SuccessResponseList:
       type: object
       properties:
@@ -1444,12 +1449,12 @@ components:
           example: true
         message:
           type: string
-          example: "List retrieved successfully. (Daftar berhasil diambil.)"
+          example: "List retrieved successfully."
         data:
           type: array
           items:
             type: object
-          example: [{ id: 1, title: "Manuskrip A" }]
+
     ValidationErrorResponse:
       type: object
       properties:
@@ -1458,11 +1463,13 @@ components:
           example: false
         message:
           type: string
+          example: "Data tidak valid."
         data:
           type: object
           properties:
             errors:
               type: object
+
     Role:
       type: object
       properties:
@@ -1470,6 +1477,7 @@ components:
           type: integer
         name:
           type: string
+
     User:
       type: object
       properties:
@@ -1482,10 +1490,11 @@ components:
         is_active:
           type: boolean
         role:
-          $ref: "#/components/schemas/Role"
+          $ref: '#/components/schemas/Role'
         created_at:
           type: string
           format: date-time
+
     AuthorConfirmation:
       type: object
       properties:
@@ -1522,6 +1531,7 @@ components:
               message:
                 type: string
                 example: "Unauthenticated."
+
     ForbiddenError:
       description: Forbidden
       content:
@@ -1535,6 +1545,7 @@ components:
               message:
                 type: string
                 example: "Access denied."
+
     NotFoundError:
       description: Not Found
       content:
@@ -1548,9 +1559,10 @@ components:
               message:
                 type: string
                 example: "Resource not found."
+
     ValidationError:
       description: Validation Error
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/ValidationErrorResponse"
+            $ref: '#/components/schemas/ValidationErrorResponse'
