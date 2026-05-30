@@ -27,7 +27,7 @@ class UpdateManuscriptStatus implements ShouldQueue
         $success = $this->manuscriptService->updateManuscriptStatus($manuscriptId, $status, $notes);
 
         if (!$success) {
-            Log::warning("Gagal mengupdate status manuskrip {$manuscriptId} dari Kelompok 2/3.");
+            Log::warning("Gagal mengupdate status manuskrip {$manuscriptId} dari Kelompok 3.");
         }
     }
 }
