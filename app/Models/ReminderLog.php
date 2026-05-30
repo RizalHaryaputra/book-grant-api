@@ -1,14 +1,12 @@
 <?php
+// app/Models/ReminderLog.php
 
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
 
 class ReminderLog extends Model
 {
-    use HasUuids;
-
     protected $table = 'reminder_logs';
     
     protected $fillable = [
@@ -18,10 +16,8 @@ class ReminderLog extends Model
         'sent_at',
         'success',
         'error_message',
-        'created_at'   // TAMBAHKAN INI
+        'created_at'
     ];
 
-    protected $keyType = 'string';
-    public $incrementing = false;
-    public $timestamps = false; // KARENA TABEL HANYA PUNYA created_at (tanpa updated_at)
+    public $timestamps = false; // karena tabel hanya punya created_at, tidak ada updated_at
 }
