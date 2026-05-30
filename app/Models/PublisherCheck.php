@@ -1,16 +1,14 @@
 <?php
+// app/Models/PublisherCheck.php
 
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
 
 class PublisherCheck extends Model
 {
-    use HasUuids;
-
     protected $table = 'publisher_checks';
-
+    
     protected $fillable = [
         'manuscript_id',
         'publisher_id',
@@ -21,7 +19,9 @@ class PublisherCheck extends Model
         'checked_at'
     ];
 
-    protected $keyType = 'string';
-
-    public $incrementing = false;
+    // Relasi ke PublisherDecision (satu check punya satu decision)
+    public function decision()
+    {
+        return $this->hasOne(PublisherDecision::class, 'check_id');
+    }
 }

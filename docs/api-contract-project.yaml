@@ -703,7 +703,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/SuccessResponseObject"
 
-    # ==========================================
+  # ==========================================
   # MODUL 4: PENERBIT, PRA-CETAK & MONITORING (KLP 1) - DENGAN HYPERMEDIA
   # ==========================================
 
