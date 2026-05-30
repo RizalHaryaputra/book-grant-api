@@ -121,6 +121,27 @@ class ReviewerManuscriptController extends Controller
      */
     public function getRubric(int $manuscriptId): JsonResponse
     {
+
+        $reviewer = $this->getCurrentReviewer();
+
+        if (!$reviewer) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Access denied.'
+            ], 403);
+        }
+
+        // Optional: Cek apakah reviewer assigned ke naskah ini
+        $assignment = ReviewSubmission::where('reviewer_id', $reviewer->id)
+            ->where('manuscript_id', $manuscriptId)
+            ->exists();
+        if (!$assignment) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Access denied. You are not assigned to this manuscript.'
+            ], 401);
+        }
+
         $manuscript = Manuscript::findOrFail($manuscriptId);
 
         // Fetch rubric criteria from database matching the manuscript book type
@@ -140,5 +161,53 @@ class ReviewerManuscriptController extends Controller
             'message' => 'Rubrik berhasil diambil.',
             'data' => ReviewRubricResource::collection($rubricData)
         ]);
+    }
+
+    /**
+     * Download Draft File for Reviewer
+     * Mengunduh file draft awal (initial) yang diunggah penulis.
+     */
+    public function downloadDraft(int $manuscriptId)
+    {
+        $reviewer = $this->getCurrentReviewer();
+
+        if (!$reviewer) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Access denied.'
+            ], 403);
+        }
+
+        $assignment = ReviewSubmission::where('reviewer_id', $reviewer->id)
+            ->where('manuscript_id', $manuscriptId)
+            ->first();
+
+        if (!$assignment) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Access denied. Anda tidak ditugaskan untuk naskah ini.'
+            ], 401);
+        }
+
+        $manuscript = Manuscript::findOrFail($manuscriptId);
+        $file = $manuscript->files()->where('file_type', 'initial')->first();
+
+        if (!$file) {
+            return response()->json([
+                'success' => false,
+                'message' => 'File draft awal tidak ditemukan.'
+            ], 404);
+        }
+
+        // Cek apakah file benar-benar ada di storage
+        if (!Storage::disk('public')->exists($file->file_path)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'File tidak tersedia di server.'
+            ], 404);
+        }
+
+        // Kembalikan file download
+        return Storage::disk('public')->download($file->file_path, 'draft_' . $manuscriptId . '.pdf');
     }
 }

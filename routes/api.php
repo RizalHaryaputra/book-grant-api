@@ -51,6 +51,7 @@ Route::middleware(MockAuthMiddleware::class)->group(function () {
             Route::get('/', [ReviewerManuscriptController::class, 'show']);
             Route::get('/rubric', [ReviewerManuscriptController::class, 'getRubric']);
             Route::post('/review', [ReviewController::class, 'submitReview']);
+            Route::get('/download', [ReviewerManuscriptController::class, 'downloadDraft']);
         });
     });
 
