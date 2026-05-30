@@ -4,19 +4,18 @@ namespace App\Events;
 
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
-use App\Models\PublisherDecision;
+use App\Models\PublisherCheck;
 
 class DecisionMade
 {
     use Dispatchable, SerializesModels;
 
-    public $publisherDecision;
+    public $publisherCheck;
+    public $revisionNotes;
 
-    /**
-     * Create a new event instance.
-     */
-    public function __construct(PublisherDecision $publisherDecision)
+    public function __construct(PublisherCheck $publisherCheck, $revisionNotes = null)
     {
-        $this->publisherDecision = $publisherDecision;
+        $this->publisherCheck = $publisherCheck;
+        $this->revisionNotes = $revisionNotes;
     }
 }

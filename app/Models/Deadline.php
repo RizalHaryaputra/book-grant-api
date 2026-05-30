@@ -14,6 +14,11 @@ class Deadline extends Model
         'assignee_id',
         'deadline_type',
         'due_date',
-        'status'
+        'status',
+        'days_before'        // ditambahkan karena ada di migration
+    ];
+
+    protected $casts = [
+        'due_date' => 'datetime', // karena timestamp
     ];
 }

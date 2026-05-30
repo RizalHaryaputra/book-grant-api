@@ -15,13 +15,10 @@ class PublisherCheck extends Model
         'cover_ok',
         'page_count_ok',
         'admin_docs_ok',
+        'decision',          // ditambahkan karena ada di migration
         'notes',
         'checked_at'
     ];
 
-    // Relasi ke PublisherDecision (satu check punya satu decision)
-    public function decision()
-    {
-        return $this->hasOne(PublisherDecision::class, 'check_id');
-    }
+    // Tidak ada relasi ke PublisherDecision (tabel dihapus)
 }

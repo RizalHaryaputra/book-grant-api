@@ -16,7 +16,7 @@ class AdminDashboardController extends Controller
 
         $totalKontrakValid = DB::table('contracts')->where('status', 'validated')->count();
         $totalDraftMasuk = DB::table('manuscripts')->where('status', 'initial_draft_uploaded')->count();
-        $totalReviewBerjalan = DB::table('review_submissions')->where('status', 'in_progress')->count();
+        $totalReviewBerjalan = DB::table('review_submissions')->where('status', 'under_review')->count();
         $totalRevisi = DB::table('manuscripts')->where('status', 'revision_uploaded')->count();
         $totalPracetak = DB::table('manuscripts')->where('status', 'preprint')->count();
         $totalSiapCetak = DB::table('manuscripts')->where('status', 'ready_to_print')->count();

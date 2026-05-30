@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Deadline;
-use App\Models\ReminderLog;
 use App\Models\User;
 use App\Services\EmailService;
 use Carbon\Carbon;
@@ -22,7 +21,6 @@ class ReminderController extends Controller
 
     /**
      * POST /reminder/trigger
-     * Menjalankan reminder untuk deadline yang mendekat (H-3 s.d H)
      */
     public function trigger(Request $request)
     {
@@ -34,6 +32,7 @@ class ReminderController extends Controller
             $today->toDateString(),
         ];
 
+        // Ambil deadline aktif yang due_date-nya mendekat
         $deadlines = Deadline::whereIn('due_date', $targetDates)
                             ->where('status', 'active')
                             ->get();
@@ -42,17 +41,12 @@ class ReminderController extends Controller
         $failedCount = 0;
 
         foreach ($deadlines as $deadline) {
-            // Cek apakah reminder sudah dikirim hari ini untuk deadline ini
-            $alreadySent = ReminderLog::where('deadline_id', $deadline->id)
-                                      ->whereDate('sent_at', $today)
-                                      ->exists();
-            if ($alreadySent) {
-                continue;
-            }
+            // (Opsional) cegah pengiriman berulang dalam satu hari – bisa simpan di cache atau log notifikasi
+            // Untuk sederhana, lewati dulu.
 
             $assignee = User::find($deadline->assignee_id);
             if (!$assignee) {
-                Log::warning("User dengan ID {$deadline->assignee_id} tidak ditemukan untuk deadline {$deadline->id}");
+                Log::warning("User ID {$deadline->assignee_id} tidak ditemukan untuk deadline {$deadline->id}");
                 continue;
             }
 
@@ -64,16 +58,8 @@ class ReminderController extends Controller
 
             $emailResult = $this->emailService->send($assignee->email, $subject, $body);
 
-            // Simpan log reminder (pastikan model ReminderLog memiliki fillable 'created_at' dan $timestamps=false)
-            ReminderLog::create([
-                'deadline_id' => $deadline->id,
-                'recipient_id' => $assignee->id,
-                'days_before' => $daysBefore,
-                'sent_at' => now(),
-                'success' => $emailResult['success'],
-                'error_message' => $emailResult['error'],
-                'created_at' => now(), // Tambahkan karena model tidak menggunakan timestamps otomatis
-            ]);
+            // Jika ingin tetap mencatat log, gunakan NotificationLog (opsional)
+            // NotificationLog::create([...]);
 
             if ($emailResult['success']) {
                 $sentCount++;

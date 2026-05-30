@@ -7,7 +7,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use App\Models\PublisherCheck;
-use App\Models\PublisherDecision;
 use App\Events\DecisionMade;
 
 class PublisherController extends Controller
@@ -17,21 +16,21 @@ class PublisherController extends Controller
      */
     public function dashboard()
     {
-        // Hitung jumlah naskah pra-cetak (status 'preprint' di tabel manuscripts)
+        // Hitung jumlah naskah pra-cetak (status 'preprint')
         $preprintCount = DB::table('manuscripts')->where('status', 'preprint')->count();
 
-        // Hitung approved dan revised bulan ini dari publisher_decisions
+        // Hitung approved dan revised bulan ini dari publisher_checks (berdasarkan updated_at)
         $currentMonth = now()->month;
         $currentYear = now()->year;
 
-        $approvedCount = PublisherDecision::where('decision', 'approved')
-            ->whereYear('decided_at', $currentYear)
-            ->whereMonth('decided_at', $currentMonth)
+        $approvedCount = PublisherCheck::where('decision', 'approved')
+            ->whereYear('updated_at', $currentYear)
+            ->whereMonth('updated_at', $currentMonth)
             ->count();
 
-        $revisedCount = PublisherDecision::where('decision', 'revised')
-            ->whereYear('decided_at', $currentYear)
-            ->whereMonth('decided_at', $currentMonth)
+        $revisedCount = PublisherCheck::where('decision', 'revised')
+            ->whereYear('updated_at', $currentYear)
+            ->whereMonth('updated_at', $currentMonth)
             ->count();
 
         // Ambil 5 naskah pra-cetak terbaru beserta author
@@ -193,7 +192,8 @@ class PublisherController extends Controller
             'cover_ok' => (bool) $check->cover_ok,
             'pages_ok' => (bool) $check->page_count_ok,
             'admin_ok' => (bool) $check->admin_docs_ok,
-            'notes' => $check->notes
+            'notes' => $check->notes,
+            'decision' => $check->decision,
         ] : null;
 
         return response()->json([
@@ -278,23 +278,22 @@ class PublisherController extends Controller
 
         $publisherId = Auth::id();
 
-        $decision = PublisherDecision::create([
-            'check_id' => $request->check_id,
-            'publisher_id' => $publisherId,
+        $check = PublisherCheck::findOrFail($request->check_id);
+        $check->update([
             'decision' => $request->decision,
-            'revision_notes' => $request->revision_notes,
-            'decided_at' => now()
+            'publisher_id' => $publisherId,
+            'checked_at' => now(),
         ]);
 
-        // Trigger event untuk integrasi kelompok 2 dan notifikasi email
-        event(new DecisionMade($decision));
+        // Trigger event dengan membawa revision_notes untuk dikirim ke Modul 2
+        event(new DecisionMade($check, $request->revision_notes));
 
         return response()->json([
             'success' => true,
             'message' => 'Keputusan berhasil disimpan',
             'data' => [
-                'decision_id' => $decision->id,
-                'status' => $decision->decision
+                'decision_id' => $check->id,
+                'status' => $check->decision
             ],
             '_links' => [
                 'dashboard' => [

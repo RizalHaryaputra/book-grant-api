@@ -7,25 +7,27 @@ use Illuminate\Database\Eloquent\Model;
 
 class NotificationLog extends Model
 {
-    protected $table = 'notification_logs';
+    protected $table = 'notification_log';
     
     protected $fillable = [
-        'template_id',
         'recipient_id',
         'manuscript_id',
+        'rs_id',             // foreign key ke review_submissions
+        'event_type',
         'email_to',
         'subject',
+        'body_html',
         'status',
         'sent_at',
-        'error_message',
-        'created_at'
+        'error_message'
     ];
 
-    public $timestamps = false; // hanya created_at
+    // Gunakan timestamps default Laravel (created_at & updated_at)
+    // Tidak perlu set $timestamps = false, karena migration punya kedua kolom
 
-    // Relasi ke NotificationTemplate
-    public function template()
+    // Relasi ke review_submissions (jika diperlukan)
+    public function reviewSubmission()
     {
-        return $this->belongsTo(NotificationTemplate::class, 'template_id');
+        return $this->belongsTo(ReviewSubmission::class, 'rs_id');
     }
 }
