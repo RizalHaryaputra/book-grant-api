@@ -118,6 +118,11 @@ class ManuscriptResource extends JsonResource
                 'method' => 'GET',
                 'href' => url("/api/manuscripts/{$id}/compiled-reviews")
             ];
+            $links[] = [
+                'rel' => 'download_pdf',
+                'method' => 'GET',
+                'href' => url("/api/manuscripts/{$id}/download-pdf")
+            ];
         }
 
         if (!empty($links)) {
