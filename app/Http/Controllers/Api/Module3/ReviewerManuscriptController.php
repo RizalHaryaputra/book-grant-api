@@ -10,6 +10,7 @@ use App\Models\ReviewSubmission;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class ReviewerManuscriptController extends Controller
 {
@@ -131,15 +132,30 @@ class ReviewerManuscriptController extends Controller
             ], 403);
         }
 
-        // Optional: Cek apakah reviewer assigned ke naskah ini
         $assignment = ReviewSubmission::where('reviewer_id', $reviewer->id)
             ->where('manuscript_id', $manuscriptId)
-            ->exists();
+            ->first();
+            
         if (!$assignment) {
             return response()->json([
                 'success' => false,
                 'message' => 'Access denied. You are not assigned to this manuscript.'
             ], 401);
+        }
+
+        $existingScores = [];
+        $existingOutcome = null;
+        $existingComment = null;
+
+        if ($assignment->status === 'review_completed') {
+            $scores = DB::table('review_scores')->where('rs_id', $assignment->id)->get();
+            foreach ($scores as $score) {
+                $existingScores[$score->rubric_id] = $score->nilai;
+            }
+
+            $existingOutcome = DB::table('review_outcomes')->where('rs_id', $assignment->id)->first();
+            $commentRow = DB::table('review_comments')->where('rs_id', $assignment->id)->first();
+            $existingComment = $commentRow ? $commentRow->comment : null;
         }
 
         $manuscript = Manuscript::findOrFail($manuscriptId);
@@ -153,14 +169,25 @@ class ReviewerManuscriptController extends Controller
                 'criteria_id' => $row->id,
                 'aspect' => $row->criteria,
                 'description' => $row->description,
-                'max_score' => $row->weight
+                'max_score' => $row->weight,
+                'submitted_score' => $existingScores[$row->id] ?? null
             ]);
 
-        return response()->json([
+        $response = [
             'success' => true,
             'message' => 'Rubrik berhasil diambil.',
-            'data' => ReviewRubricResource::collection($rubricData)
-        ]);
+            'data'    => ReviewRubricResource::collection($rubricData)
+        ];
+
+        if ($assignment->status === 'review_completed') {
+            $response['submitted_review'] = [
+                'final_score'   => $existingOutcome ? round($existingOutcome->overall_score, 2) : null,
+                'status'        => $existingOutcome ? ($existingOutcome->status ? 'accepted' : 'rejected') : null,
+                'feedback'      => $existingComment
+            ];
+        }
+
+        return response()->json($response);
     }
 
     /**

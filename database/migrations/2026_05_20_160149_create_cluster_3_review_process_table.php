@@ -29,20 +29,18 @@ return new class extends Migration
             $table->tinyInteger('status')->default(1);
         });
 
-        // 3. Review Scores Table (Disini kolom nile sudah diubah menjadi nilai)
+        // 3. Review Scores Table
         Schema::create('review_scores', function (Blueprint $table) {
             $table->id();
             $table->foreignId('rs_id')->constrained('review_submissions')->onUpdate('cascade')->onDelete('cascade');
             $table->foreignId('rubric_id')->constrained('assessment_rubric')->onUpdate('cascade')->onDelete('restrict');
-            $table->integer('nilai')->nullable(); 
+            $table->integer('nilai')->nullable();
         });
 
         // 4. Review Outcomes Table
         Schema::create('review_outcomes', function (Blueprint $table) {
             $table->id();
             $table->foreignId('rs_id')->unique()->constrained('review_submissions')->onUpdate('cascade')->onDelete('cascade');
-            $table->foreignId('score_id')->constrained('review_scores')->onUpdate('cascade')->onDelete('restrict');
-            $table->foreignId('rubric_id')->constrained('assessment_rubric')->onUpdate('cascade')->onDelete('restrict');
             $table->integer('overall_score')->nullable();
             $table->boolean('status')->nullable();
             $table->timestamp('timestamp')->useCurrent();

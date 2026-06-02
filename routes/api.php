@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\Module3\AdminManuscriptController;
+use App\Http\Controllers\Api\Module3\AdminRubricController;
 use App\Http\Controllers\Api\Module3\ReviewerManuscriptController;
 use App\Http\Controllers\Api\Module3\ReviewController;
 
@@ -42,6 +43,15 @@ Route::middleware(MockAuthMiddleware::class)->group(function () {
             Route::delete('/{manuscriptId}/remove-reviewer/{reviewerId}', [AdminManuscriptController::class, 'removeReviewer']);
         });
         Route::get('/reviewers', [AdminManuscriptController::class, 'getReviewers']);
+
+        // Rubric Management
+        Route::prefix('rubrics')->group(function () {
+            Route::get('/', [AdminRubricController::class, 'index']);
+            Route::get('/{id}', [AdminRubricController::class, 'show']);
+            Route::post('/', [AdminRubricController::class, 'store']);
+            Route::put('/{id}', [AdminRubricController::class, 'update']);
+            Route::delete('/{id}', [AdminRubricController::class, 'destroy']);
+        });
     });
 
     // ---------- REVIEWER ONLY (role_id = 2) ----------

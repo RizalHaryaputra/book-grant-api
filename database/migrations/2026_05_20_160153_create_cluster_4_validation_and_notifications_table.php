@@ -9,7 +9,7 @@ return new class extends Migration
     public function up(): void
     {
         // ==========================================
-        // 1. Publisher Checks Table (sesuai ERD)
+        // 1. Publisher Checks Table (sesuai SQL)
         // ==========================================
         Schema::create('publisher_checks', function (Blueprint $table) {
             $table->id();
@@ -18,31 +18,34 @@ return new class extends Migration
             $table->boolean('cover_ok')->nullable();
             $table->boolean('page_count_ok')->nullable();
             $table->boolean('admin_docs_ok')->nullable();
+            $table->enum('decision', ['approved', 'revised'])->nullable();
             $table->text('notes')->nullable();
             $table->timestamp('checked_at')->nullable();
-            $table->timestamp('created_at')->useCurrent();
-            $table->timestamp('updated_at')->useCurrent()->useCurrentOnUpdate();
+            $table->timestamps(); // created_at & updated_at
         });
 
         // ==========================================
-        // 2. Deadlines Table (sesuai ERD)
+        // 2. Deadlines Table (sesuai SQL)
         // ==========================================
         Schema::create('deadlines', function (Blueprint $table) {
             $table->id();
             $table->foreignId('manuscript_id')->unique()->constrained('manuscripts')->onUpdate('cascade')->onDelete('cascade');
             $table->foreignId('assignee_id')->unique()->constrained('users')->onUpdate('cascade')->onDelete('restrict');
             $table->enum('deadline_type', ['draft_upload', 'review', 'revision', 'preprint'])->nullable();
-            $table->date('due_date')->nullable();  // DATE, bukan TIMESTAMP
+            $table->timestamp('due_date')->nullable(); // TIMESTAMP, sesuai SQL
             $table->enum('status', ['active', 'completed', 'expired'])->nullable();
-            $table->timestamp('created_at')->useCurrent();
-            $table->timestamp('updated_at')->useCurrent()->useCurrentOnUpdate();
+            $table->integer('days_before')->nullable();
+            $table->timestamps();
         });
 
         // ==========================================
-        // 3. Notification Templates Table (dibuat dulu untuk FK)
+        // 3. Notification Log Table (sesuai SQL)
         // ==========================================
-        Schema::create('notification_templates', function (Blueprint $table) {
+        Schema::create('notification_log', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('recipient_id')->unique()->constrained('users')->onUpdate('cascade')->onDelete('cascade');
+            $table->foreignId('manuscript_id')->unique()->constrained('manuscripts')->onUpdate('cascade')->onDelete('cascade');
+            $table->foreignId('rs_id')->unique()->constrained('review_submissions')->onUpdate('cascade')->onDelete('cascade');
             $table->enum('event_type', [
                 'account_created',
                 'contract_validated',
@@ -54,58 +57,18 @@ return new class extends Migration
                 'publisher_approved',
                 'publisher_revised',
                 'deadline_reminder'
-            ])->unique();
-            $table->string('subject', 255);
-            $table->text('body_html');
-            $table->timestamps();
-        });
-
-        // ==========================================
-        // 4. Notification Log Table (sesuai ERD)
-        // ==========================================
-        Schema::create('notification_log', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('template_id')->constrained('notification_templates')->onUpdate('cascade')->onDelete('cascade');
-            $table->foreignId('recipient_id')->constrained('users')->onUpdate('cascade')->onDelete('cascade');
-            $table->foreignId('manuscript_id')->constrained('manuscripts')->onUpdate('cascade')->onDelete('cascade');
-            $table->string('email_to', 255);
-            $table->string('subject', 255);
-            $table->enum('status', ['pending', 'sent', 'failed'])->default('pending');
+            ]);
+            $table->string('email_to', 255)->nullable();
+            $table->string('subject', 255)->nullable();
+            $table->text('body_html')->nullable();
+            $table->enum('status', ['pending', 'sent', 'failed'])->nullable();
             $table->timestamp('sent_at')->nullable();
             $table->text('error_message')->nullable();
-            $table->timestamp('created_at')->useCurrent();
-            // Tidak ada updated_at, rs_id, event_type, body_html
+            $table->timestamps(); // created_at & updated_at
         });
 
         // ==========================================
-        // 5. Publisher Decisions Table
-        // ==========================================
-        Schema::create('publisher_decisions', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('check_id')->constrained('publisher_checks')->onDelete('cascade');
-            $table->foreignId('publisher_id')->constrained('users')->onDelete('cascade');
-            $table->enum('decision', ['approved', 'revised']);
-            $table->text('revision_notes')->nullable();
-            $table->timestamp('decided_at')->useCurrent();
-            $table->timestamps();
-        });
-
-        // ==========================================
-        // 6. Reminder Logs Table
-        // ==========================================
-        Schema::create('reminder_logs', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('deadline_id')->constrained('deadlines')->onDelete('cascade');
-            $table->foreignId('recipient_id')->constrained('users')->onDelete('cascade');
-            $table->integer('days_before')->nullable();
-            $table->timestamp('sent_at')->useCurrent();
-            $table->boolean('success')->default(false);
-            $table->text('error_message')->nullable();
-            $table->timestamp('created_at')->useCurrent();
-        });
-
-        // ==========================================
-        // TAMBAHAN INDEX KINERJA
+        // TAMBAHAN INDEX KINERJA (sesuai SQL)
         // ==========================================
         Schema::table('manuscripts', function (Blueprint $table) {
             $table->index('author_id', 'idx_manuscripts_author');
@@ -133,16 +96,13 @@ return new class extends Migration
         });
 
         Schema::table('notification_log', function (Blueprint $table) {
-            $table->index('status', 'idx_notification_log_status');
+            $table->index('event_type', 'idx_notification_log_event');
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('reminder_logs');
-        Schema::dropIfExists('publisher_decisions');
         Schema::dropIfExists('notification_log');
-        Schema::dropIfExists('notification_templates');
         Schema::dropIfExists('deadlines');
         Schema::dropIfExists('publisher_checks');
     }
