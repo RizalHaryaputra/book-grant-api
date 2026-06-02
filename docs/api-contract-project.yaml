@@ -520,6 +520,184 @@ paths:
   # ==========================================
   # MODUL 3: REVIEWER & PROSES REVIEW (KLP 2)
   # ==========================================
+  /admin/reviewers:
+    get:
+      summary: Get All Reviewers (Dapatkan Semua Reviewer)
+      tags:
+        - Modul 3 - Reviewer & Proses Review (Kelompok 2)
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Daftar reviewer berhasil diambil.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponseList"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+  /admin/rubrics:
+    get:
+      summary: Get All Rubrics (Dapatkan Semua Rubrik)
+      tags:
+        - Modul 3 - Reviewer & Proses Review (Kelompok 2)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: book_type
+          in: query
+          schema:
+            type: string
+            enum: [Buku Ajar, Buku Referensi]
+      responses:
+        "200":
+          description: Daftar rubrik berhasil diambil.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponseList"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+    post:
+      summary: Create New Rubric (Buat Rubrik Baru)
+      tags:
+        - Modul 3 - Reviewer & Proses Review (Kelompok 2)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [criteria, book_type, weight]
+              properties:
+                criteria:
+                  type: string
+                  example: "Kesesuaian Format"
+                book_type:
+                  type: string
+                  enum: [Buku Ajar, Buku Referensi]
+                description:
+                  type: string
+                  example: "Penjelasan mengenai format penulisan"
+                weight:
+                  type: integer
+                  example: 20
+                status:
+                  type: boolean
+                  example: true
+      responses:
+        "201":
+          description: Kriteria rubrik berhasil ditambahkan.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponseObject"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+  /admin/rubrics/{id}:
+    get:
+      summary: Get Rubric Detail (Dapatkan Detail Rubrik)
+      tags:
+        - Modul 3 - Reviewer & Proses Review (Kelompok 2)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Detail rubrik berhasil diambil.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponseObject"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+    put:
+      summary: Update Rubric (Perbarui Rubrik)
+      tags:
+        - Modul 3 - Reviewer & Proses Review (Kelompok 2)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                criteria:
+                  type: string
+                book_type:
+                  type: string
+                  enum: [Buku Ajar, Buku Referensi]
+                description:
+                  type: string
+                weight:
+                  type: integer
+                status:
+                  type: boolean
+      responses:
+        "200":
+          description: Kriteria rubrik berhasil diperbarui.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponseObject"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+    delete:
+      summary: Delete Rubric (Hapus Rubrik)
+      tags:
+        - Modul 3 - Reviewer & Proses Review (Kelompok 2)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Kriteria rubrik berhasil dihapus.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+  /admin/manuscripts:
+    get:
+      summary: Get All Manuscripts (Dapatkan Semua Naskah)
+      tags:
+        - Modul 3 - Reviewer & Proses Review (Kelompok 2)
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Daftar semua naskah berhasil diambil.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponseList"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
   /admin/manuscripts/unassigned:
     get:
       summary: Get Unassigned Manuscripts (Dapatkan Naskah Belum Diplot)
@@ -571,6 +749,33 @@ paths:
       responses:
         "200":
           description: Reviewer berhasil ditugaskan.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+  /admin/manuscripts/{manuscriptId}/remove-reviewer/{reviewerId}:
+    delete:
+      summary: Remove Reviewer from Manuscript (Hapus Penugasan Reviewer)
+      tags:
+        - Modul 3 - Reviewer & Proses Review (Kelompok 2)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: manuscriptId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: reviewerId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Reviewer berhasil dihapus dari naskah.
           content:
             application/json:
               schema:
