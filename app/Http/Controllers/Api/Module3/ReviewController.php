@@ -98,6 +98,18 @@ class ReviewController extends Controller
                 'manuscript_id' => $manuscriptId,
                 'status'        => 'review_completed',
             ],
+            'links' => [
+                [
+                    'rel' => 'get_details',
+                    'method' => 'GET',
+                    'href' => url("/api/reviewer/manuscripts/{$manuscriptId}")
+                ],
+                [
+                    'rel' => 'dashboard',
+                    'method' => 'GET',
+                    'href' => url('/api/reviewer/dashboard')
+                ]
+            ]
         ]);
     }
 

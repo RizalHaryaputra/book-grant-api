@@ -71,7 +71,14 @@ class ReviewerManuscriptController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Daftar tugas review berhasil diambil.',
-            'data' => $taskList
+            'data' => $taskList,
+            'links' => [
+                [
+                    'rel' => 'self',
+                    'method' => 'GET',
+                    'href' => url('/api/reviewer/dashboard')
+                ]
+            ]
         ]);
     }
 

@@ -88,7 +88,19 @@ class AdminManuscriptController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Reviewer berhasil dihapus dari naskah.',
-                'data' => null
+                'data' => null,
+                'links' => [
+                    [
+                        'rel' => 'assign_reviewer',
+                        'method' => 'POST',
+                        'href' => url("/api/admin/manuscripts/{$manuscriptId}/assign-reviewer")
+                    ],
+                    [
+                        'rel' => 'all_manuscripts',
+                        'method' => 'GET',
+                        'href' => url('/api/admin/manuscripts')
+                    ]
+                ]
             ]);
         }
 
@@ -135,7 +147,19 @@ class AdminManuscriptController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Reviewer berhasil ditugaskan.',
-            'data' => null
+            'data' => null,
+            'links' => [
+                [
+                    'rel' => 'remove_reviewer',
+                    'method' => 'DELETE',
+                    'href' => url("/api/admin/manuscripts/{$manuscriptId}/remove-reviewer/{$validated['reviewer_id']}")
+                ],
+                [
+                    'rel' => 'all_manuscripts',
+                    'method' => 'GET',
+                    'href' => url('/api/admin/manuscripts')
+                ]
+            ]
         ], 200);
     }
 }
