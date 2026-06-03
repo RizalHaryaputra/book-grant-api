@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-// 1. Tambahkan baris ini di bagian atas
 use Laravel\Sanctum\HasApiTokens; 
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -16,7 +15,6 @@ use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
-    // 2. Tambahkan HasApiTokens di dalam use class ini
     use HasApiTokens, HasFactory, Notifiable; 
 
     protected $fillable = [
@@ -40,8 +38,7 @@ class User extends Authenticatable
         ];
     }
 
-    // Relasi ke tabel roles (Belongs-To)
-   // Relasi ke tabel roles
+    // Relasi ke tabel roles
     public function role()
     {
         return $this->belongsTo(\App\Models\Role::class, 'role_id', 'id');
@@ -52,9 +49,9 @@ class User extends Authenticatable
     {
         return $this->hasOne(\App\Models\AuthorProfile::class, 'user_id', 'id');
     }
-}
+
     // -----------------------------------------------------------------
-    // Relationships
+    // Relationships (Tambahan Kelompok 1)
     // -----------------------------------------------------------------
 
     /**
