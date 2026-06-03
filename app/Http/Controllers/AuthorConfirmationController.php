@@ -7,56 +7,58 @@ use App\Models\AuthorProfile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Validator;
+// use Illuminate\Support\Facades\Http; // Sudah dihapus
 
 class AuthorConfirmationController extends Controller
 {
     public function store(Request $request)
     {
-        // 1. Validasi Input (Disesuaikan dengan ERD baru)
+        // 1. Validasi input
         $validator = Validator::make($request->all(), [
             'name' => 'required|string',
             'email' => 'required|email|unique:users,email',
             'institution' => 'required|string',
             'book_title' => 'required|string',
-            'book_type' => 'required|in:buku ajar,buku referensi', 
-            'ai_ethics_agreed' => 'boolean',
-            'willingness_statement' => 'boolean' 
+            'book_type' => 'required|in:buku ajar,buku referensi',
+            'ai_ethics_agreed' => 'required|accepted',
+            'willingness_statement' => 'required|accepted'
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Validasi gagal.',
-                'data' => ['errors' => $validator->errors()]
+                'data' => [
+                    'errors' => $validator->errors()
+                ]
             ], 422);
         }
 
         try {
+            // 2. Transaksi Database
             $result = DB::transaction(function () use ($request) {
-                // Generate password acak 8 karakter
                 $rawPassword = Str::password(8, true, true, true, false);
 
-                // a. Buat akun User
+                // Buat akun user
                 $user = User::create([
-                    'role_id' => 2, // 2 = Penulis
+                    'role_id' => 2,
                     'name' => $request->name,
                     'email' => $request->email,
                     'password' => Hash::make($rawPassword),
                     'is_active' => true,
                 ]);
 
-                // b. Buat Profil Penulis (Mapping dari request ke kolom DB terbaru)
+                // Simpan profil penulis
                 $author = AuthorProfile::create([
                     'user_id' => $user->id,
-                    'institution' => $request->institution,      
+                    'institution' => $request->institution,
                     'book_title' => $request->book_title,
                     'book_type' => $request->book_type,
-                    'ai_ethics_agreed' => $request->ai_ethics_agreed ?? true, // Sudah diperbaiki jadi 'ai'
-                    'willingness_statement' => $request->willingness_statement ?? true, // Sesuaikan ERD
-                    'status' => 'account_created', // Status awal sesuai alur ERD baru
+                    'ai_ethics_agreed' => $request->boolean('ai_ethics_agreed'),
+                    'willingness_statement' => $request->boolean('willingness_statement'),
+                    'status' => 'account_created',
                 ]);
 
                 return [
@@ -66,39 +68,24 @@ class AuthorConfirmationController extends Controller
                 ];
             });
 
-            // 3. Kirim Email Notifikasi via Server Modul 4 (Port 8001)
-            try {
-                $response = Http::post('http://127.0.0.1:8001/api/notification/send', [
-                    'to' => $result['user']->email,
-                    'subject' => 'Akun Sistem Hibah Buku Anda',
-                    'body' => "Halo {$result['user']->name}, ini kredensial Anda. Email: {$result['user']->email}, Password: {$result['rawPassword']}",
-                    'type' => 'akun'
-                ]);
+            // 3. Trigger Event untuk Kelompok 1
+            \App\Events\AccountCreated::dispatch([
+                'user_id' => $result['user']->id, 
+                'email' => $result['user']->email, 
+                'name' => $result['user']->name,
+                'raw_password' => $result['rawPassword'] // Disertakan untuk isi email
+            ]);
 
-                if ($response->successful()) {
-                    return response()->json([
-                        'success' => true,
-                        'message' => 'Akun penulis berhasil dibuat. Email kredensial telah dikirim.',
-                        'data' => [
-                            'author_id' => $result['author']->id,
-                            'user_id' => $result['user']->id,
-                            'status' => $result['author']->status
-                        ]
-                    ], 201);
-                }
-            } catch (\Exception $e) {
-                // Biarkan kosong agar tetap masuk ke response 202 jika email gagal
-            }
-
+            // 4. Response Langsung Sukses
             return response()->json([
-                'success' => false, 
-                'message' => 'Akun dibuat, namun email gagal terkirim.',
+                'success' => true,
+                'message' => 'Akun penulis berhasil dibuat. Email kredensial diproses di latar belakang.',
                 'data' => [
                     'author_id' => $result['author']->id,
                     'user_id' => $result['user']->id,
                     'status' => $result['author']->status
                 ]
-            ], 202);
+            ], 201);
 
         } catch (\Exception $e) {
             return response()->json([

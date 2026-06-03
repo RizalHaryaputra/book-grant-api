@@ -8,6 +8,9 @@ use Illuminate\Support\Facades\Validator;
 
 class ContractController extends Controller
 {
+    // ==========================================
+    // FUNGSI PENULIS: Upload Kontrak
+    // ==========================================
     public function upload(Request $request)
     {
         // 1. Pastikan yang login punya profil penulis
@@ -66,6 +69,7 @@ class ContractController extends Controller
             ], 500);
         }
     }
+
     // ==========================================
     // FUNGSI ADMIN: Validasi Kontrak
     // ==========================================
@@ -77,7 +81,7 @@ class ContractController extends Controller
             'rejection_reason' => 'required_if:status,rejected,revision|nullable|string'
         ]);
 
-        // 2. Cari data kontrak berdasarkan ID, sekalian tarik data email usernya
+        // 2. Cari data kontrak berdasarkan ID, sekalian tarik data user dan authorProfile
         $contract = Contract::with('authorProfile.user')->find($id);
 
         if (!$contract) {
@@ -91,33 +95,24 @@ class ContractController extends Controller
         $contract->status = $request->status;
         $contract->rejection_reason = $request->rejection_reason;
 
-        // Jika disetujui, catat waktu validasinya
+        // Jika disetujui, catat waktu validasinya dan jalankan Event
         if ($request->status === 'validated') {
             $contract->validated_at = now();
+            
+            // Ambil relasi data untuk dikirim ke Event
+            $user = $contract->authorProfile->user;
+            $bookTitle = $contract->authorProfile->book_title ?? 'Naskah Tanpa Judul';
+
+            // Trigger Event untuk Kelompok 1 (Background Process)
+            \App\Events\ContractValidated::dispatch([
+                'user_id' => $user->id, 
+                'email' => $user->email, 
+                'name' => $user->name, 
+                'manuscript_title' => $bookTitle
+            ]);
         }
 
         $contract->save();
-
-        // 4. (Opsional) Tembak Notifikasi ke Server Dummy Kelompok 1
-        try {
-            $userEmail = $contract->authorProfile->user->email ?? 'dummy@mail.com';
-            $pesan = "Status kontrak Anda saat ini adalah: " . strtoupper($request->status) . ". ";
-            
-            if ($request->status === 'validated') {
-                $pesan .= "Selamat! Kontrak Anda valid. Silakan lanjut mengunggah Draft Awal Naskah Anda.";
-            } else {
-                $pesan .= "Catatan Admin: " . $request->rejection_reason;
-            }
-
-            \Illuminate\Support\Facades\Http::post('http://127.0.0.1:8001/api/notification/send', [
-                'to' => $userEmail,
-                'subject' => "Update Validasi Kontrak - Hibah Buku",
-                'body' => $pesan,
-                'type' => 'kontrak'
-            ]);
-        } catch (\Exception $e) {
-            // Abaikan jika server notifikasi port 8001 sedang mati
-        }
 
         return response()->json([
             'success' => true,
