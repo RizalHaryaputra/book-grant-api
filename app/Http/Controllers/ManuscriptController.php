@@ -6,6 +6,7 @@ use App\Models\Manuscript;
 use App\Models\ManuscriptFile;
 use App\Models\AuthorDocument;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ManuscriptController extends Controller
 {
@@ -131,6 +132,68 @@ class ManuscriptController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal mengunggah dokumen: ' . $e->getMessage(),
+                'data'    => null
+            ], 500);
+        }
+    }
+
+    // FITUR 4: MELIHAT HASIL REVIEW
+    public function reviews($manuscriptId)
+    {
+        try {
+            // TODO: Ganti dengan $request->user()->id saat auth Modul 1/Kelompok 4 sudah terintegrasi.
+            $authorId = 1;
+
+            $manuscript = Manuscript::find($manuscriptId);
+
+            if (!$manuscript) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Naskah tidak ditemukan.',
+                    'data'    => null
+                ], 404);
+            }
+
+            if ((int) $manuscript->author_id !== $authorId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Anda tidak memiliki akses ke naskah ini.',
+                    'data'    => null
+                ], 403);
+            }
+
+            $reviews = DB::table('review_submissions as rs')
+                ->leftJoin('review_outcomes as ro', 'ro.rs_id', '=', 'rs.id')
+                ->leftJoin('review_scores as rsc', 'rsc.rs_id', '=', 'rs.id')
+                ->leftJoin('review_comments as rc', 'rc.rs_id', '=', 'rs.id')
+                ->where('rs.manuscript_id', $manuscriptId)
+                ->where('rs.status', 'review_completed')
+                ->orderBy('rs.id')
+                ->select([
+                    'rs.id',
+                    DB::raw('COALESCE(ro.overall_score, rsc.nile) as score'),
+                    'rc.comment as feedback',
+                ])
+                ->get()
+                ->values()
+                ->map(function ($review, $index) {
+                    return [
+                        'reviewer_alias' => 'Reviewer ' . ($index + 1),
+                        'score'          => $review->score === null ? null : (int) $review->score,
+                        'feedback'       => $review->feedback,
+                    ];
+                });
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Hasil review berhasil diambil.',
+                'data'    => $reviews
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengambil hasil review: ' . $e->getMessage(),
                 'data'    => null
             ], 500);
         }
