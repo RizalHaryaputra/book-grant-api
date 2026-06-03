@@ -16,4 +16,7 @@ Route::prefix('author')->group(function () {
 
     // [Fitur 4] Melihat Hasil Review
     Route::get('/manuscripts/{manuscriptId}/reviews', [ManuscriptController::class, 'reviews']);
+
+    // [Fitur 5] Upload Revisi Naskah
+    Route::post('/manuscripts/{manuscriptId}/revisions', [ManuscriptController::class, 'uploadRevision']);
 });
