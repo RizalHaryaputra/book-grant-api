@@ -43,9 +43,9 @@ return new class extends Migration
         // ==========================================
         Schema::create('notification_log', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('recipient_id')->unique()->constrained('users')->onUpdate('cascade')->onDelete('cascade');
-            $table->foreignId('manuscript_id')->unique()->constrained('manuscripts')->onUpdate('cascade')->onDelete('cascade');
-            $table->foreignId('rs_id')->unique()->constrained('review_submissions')->onUpdate('cascade')->onDelete('cascade');
+            $table->foreignId('recipient_id')->nullable()->constrained('users')->onUpdate('cascade')->onDelete('cascade');
+            $table->foreignId('manuscript_id')->nullable()->constrained('manuscripts')->onUpdate('cascade')->onDelete('cascade');
+            $table->foreignId('rs_id')->nullable()->constrained('review_submissions')->onUpdate('cascade')->onDelete('cascade');
             $table->enum('event_type', [
                 'account_created',
                 'contract_validated',

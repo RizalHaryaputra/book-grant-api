@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Carbon\Carbon;
 
-class DatabaseSeeder extends Seeder
+class DBSeeder extends Seeder
 {
     public function run(): void
     {
@@ -159,12 +159,6 @@ class DatabaseSeeder extends Seeder
                 'rs_id' => 1,
                 'rubric_id' => 1,
                 'nilai' => 85, // Kriteria 1
-            ],
-            [
-                'id' => 2,
-                'rs_id' => 1,
-                'rubric_id' => 2,
-                'nilai' => 90, // Kriteria 2
             ],
         ]);
 
