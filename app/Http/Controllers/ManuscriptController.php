@@ -7,6 +7,7 @@ use App\Models\ManuscriptFile;
 use App\Models\AuthorDocument;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 
 class ManuscriptController extends Controller
 {
@@ -132,6 +133,86 @@ class ManuscriptController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal mengunggah dokumen: ' . $e->getMessage(),
+                'data'    => null
+            ], 500);
+        }
+    }
+
+    // FITUR 5: UPLOAD REVISI NASKAH
+    public function uploadRevision(Request $request, $manuscriptId)
+    {
+        $validator = Validator::make($request->all(), [
+            'file_revision' => 'required|file|mimes:pdf,docx|max:5120',
+            'revision_note' => 'nullable|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validasi gagal.',
+                'data'    => $validator->errors()
+            ], 422);
+        }
+
+        try {
+            // TODO: Ganti dengan $request->user()->id saat auth Modul 1/Kelompok 4 sudah terintegrasi.
+            $authorId = 1;
+
+            $manuscript = Manuscript::find($manuscriptId);
+
+            if (!$manuscript) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Naskah tidak ditemukan.',
+                    'data'    => null
+                ], 404);
+            }
+
+            if ((int) $manuscript->author_id !== $authorId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Anda tidak memiliki akses ke naskah ini.',
+                    'data'    => null
+                ], 403);
+            }
+
+            if ($manuscript->status !== 'revision_requested') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Revisi hanya dapat diunggah jika status naskah membutuhkan revisi.',
+                    'data'    => [
+                        'current_status' => $manuscript->status
+                    ]
+                ], 422);
+            }
+
+            $file = $request->file('file_revision');
+            $fileName = time() . '_revision_' . $file->getClientOriginalName();
+            $filePath = $file->storeAs('revisions', $fileName, 'public');
+
+            $latestVersion = ManuscriptFile::where('manuscript_id', $manuscriptId)->max('version') ?? 0;
+
+            ManuscriptFile::create([
+                'manuscript_id' => $manuscript->id,
+                'file_path'     => $filePath,
+                'file_type'     => 'revision',
+                'version'       => ((int) $latestVersion) + 1,
+                'revision_note' => $request->input('revision_note'),
+            ]);
+
+            $manuscript->status = 'revision_uploaded';
+            $manuscript->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Revisi naskah berhasil diunggah.',
+                'data'    => $manuscript->fresh()
+            ], 201);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengunggah revisi naskah: ' . $e->getMessage(),
                 'data'    => null
             ], 500);
         }
