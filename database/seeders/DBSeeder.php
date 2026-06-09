@@ -11,7 +11,6 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        // PENTING: Matikan foreign key check sementara agar tidak error saat truncate/delete data lama
         DB::statement('SET FOREIGN_KEY_CHECKS=0;');
         
         // Bersihkan data lama jika ada
@@ -23,6 +22,10 @@ class DatabaseSeeder extends Seeder
         DB::table('assessment_rubric')->truncate();
         DB::table('review_submissions')->truncate();
         DB::table('review_scores')->truncate();
+        
+        // TAMBAHAN: Truncate untuk tabel Modul 3 lainnya
+        DB::table('review_outcomes')->truncate();
+        DB::table('review_comments')->truncate();
 
         // 1. SEED TABLE: ROLES (Data Master)
         DB::table('roles')->insert([
@@ -121,7 +124,7 @@ class DatabaseSeeder extends Seeder
                 'book_type' => 'Buku Ajar',
                 'description' => 'Menilai apakah isi buku materi sudah sesuai dengan RPS perkuliahan.',
                 'weight' => 30,
-                'status' => 1
+                'status' => true 
             ],
             [
                 'id' => 2,
@@ -129,7 +132,7 @@ class DatabaseSeeder extends Seeder
                 'book_type' => 'Buku Ajar',
                 'description' => 'Menilai tata bahasa, keterbacaan, dan struktur penulisan.',
                 'weight' => 40,
-                'status' => 1
+                'status' => true 
             ],
             [
                 'id' => 3,
@@ -137,38 +140,63 @@ class DatabaseSeeder extends Seeder
                 'book_type' => 'Buku Ajar',
                 'description' => 'Memastikan karya bebas dari indikasi plagiarisme berat.',
                 'weight' => 30,
-                'status' => 1
+                'status' => true // Ini ngga tau kamu harusnya pake int apa boolean, nek di ERD Boolean. Kalo mau ganti bilang
             ],
         ]);
 
         // 7. SEED TABLE: REVIEW_SUBMISSIONS (Penugasan Reviewer)
         DB::table('review_submissions')->insert([
             'id' => 1,
-            'reviewer_id' => 2, // Prof. Budi
-            'manuscript_id' => 1, // Buku Laravel
+            'reviewer_id' => 2, 
+            'manuscript_id' => 1, 
             'status' => 'review_completed',
             'deadline' => Carbon::now()->addDays(14),
             'created_at' => now(),
             'updated_at' => now(),
         ]);
 
-        // 8. SEED TABLE: REVIEW_SCORES (Sudah menggunakan kolom 'nilai')
+        // 8. SEED TABLE: REVIEW_SCORES 
         DB::table('review_scores')->insert([
             [
                 'id' => 1,
                 'rs_id' => 1,
                 'rubric_id' => 1,
-                'nilai' => 85, // Kriteria 1
+                'nilai' => 85, 
             ],
             [
                 'id' => 2,
                 'rs_id' => 1,
                 'rubric_id' => 2,
-                'nilai' => 90, // Kriteria 2
+                'nilai' => 90, 
+            ],
+            [
+                'id' => 3,
+                'rs_id' => 1,
+                'rubric_id' => 3,
+                'nilai' => 80, 
             ],
         ]);
 
-        // Aktifkan kembali foreign key check
+        DB::table('review_outcomes')->insert([
+            'id' => 1,
+            'rs_id' => 1,
+            'overall_score' => 86, 
+            'timestamp' => now(),
+        ]);
+
+        DB::table('review_comments')->insert([
+            [
+                'id' => 1,
+                'rs_id' => 1,
+                'comment' => 'Buku ajar ini sangat komprehensif dan sesuai dengan silabus terbaru. Namun, perlu ditambahkan beberapa studi kasus nyata di bab 4.',
+            ],
+            [
+                'id' => 2,
+                'rs_id' => 1,
+                'comment' => 'Secara umum, tata bahasa sudah baik, hanya ada beberapa kesalahan ketik (typo) minor yang perlu diperbaiki sebelum naik cetak.',
+            ]
+        ]);
+
         DB::statement('SET FOREIGN_KEY_CHECKS=1;');
     }
 }
