@@ -26,7 +26,7 @@ return new class extends Migration
             $table->enum('book_type', ['Buku Ajar', 'Buku Referensi'])->nullable();
             $table->text('description')->nullable();
             $table->integer('weight')->nullable();
-            $table->tinyInteger('status')->default(1);
+            $table->boolean('status')->default(true); 
         });
 
         // 3. Review Scores Table
@@ -42,7 +42,6 @@ return new class extends Migration
             $table->id();
             $table->foreignId('rs_id')->unique()->constrained('review_submissions')->onUpdate('cascade')->onDelete('cascade');
             $table->integer('overall_score')->nullable();
-            $table->boolean('status')->nullable();
             $table->timestamp('timestamp')->useCurrent();
         });
 
