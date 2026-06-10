@@ -1,22 +1,41 @@
 <?php
 
-use Illuminate\Http\Request;
+
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ManuscriptController;
 
 Route::prefix('author')->group(function () {
-    // [Fitur 3] Dasbor Penulis
-    Route::get('/dashboard', [ManuscriptController::class, 'dashboard']);
 
-    // [Fitur 1] Upload Draft Awal 
-    Route::post('/manuscripts/drafts', [ManuscriptController::class, 'uploadDraft']);
-    
-    // [Fitur 2] Upload Dokumen Administrasi 
-    Route::post('/manuscripts/{manuscriptId}/documents', [ManuscriptController::class, 'uploadDocument']);
+    Route::get('/dashboard',
+        [ManuscriptController::class, 'dashboard']);
 
-    // [Fitur 4] Melihat Hasil Review
-    Route::get('/manuscripts/{manuscriptId}/reviews', [ManuscriptController::class, 'reviews']);
+    Route::post('/manuscripts/drafts',
+        [ManuscriptController::class, 'uploadDraft']);
 
-    // [Fitur 5] Upload Revisi Naskah
-    Route::post('/manuscripts/{manuscriptId}/revisions', [ManuscriptController::class, 'uploadRevision']);
+    Route::post('/manuscripts/{manuscriptId}/documents',
+        [ManuscriptController::class, 'uploadDocument']);
+
+    Route::get('/manuscripts/{manuscriptId}/reviews',
+        [ManuscriptController::class, 'reviews']);
+
+    Route::post('/manuscripts/{manuscriptId}/revisions',
+        [ManuscriptController::class, 'uploadRevision']);
+
+    Route::get('/manuscripts/{manuscriptId}',
+        [ManuscriptController::class, 'show']);
+
+    Route::put('/manuscripts/{manuscriptId}',
+        [ManuscriptController::class, 'updateMetadata']);
+
+    Route::get('/manuscripts/{manuscriptId}/files',
+        [ManuscriptController::class, 'files']);
+
+    Route::get('/manuscripts/{manuscriptId}/documents',
+        [ManuscriptController::class, 'documents']);
+
+    Route::get('/manuscripts/{manuscriptId}/publisher-check',
+        [ManuscriptController::class, 'publisherCheck']);
+
+    Route::post('/manuscripts/{manuscriptId}/preprint-revision',
+        [ManuscriptController::class, 'uploadPreprintRevision']);
 });
