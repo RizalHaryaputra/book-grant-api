@@ -64,14 +64,28 @@ class ReviewerManuscriptController extends Controller
                 'penulis' => $m && $m->author ? $m->author->name : '',
                 'progres' => $progress,
                 'tenggat' => $sub->deadline ? $sub->deadline->translatedFormat('j F Y') : 'Belum ditentukan',
-                'status' => $statusText
+                'status' => $statusText,
+                'links' => [
+                    [
+                        'rel' => 'get_details',
+                        'method' => 'GET',
+                        'href' => url('/api/reviewer/manuscripts/' . $sub->manuscript_id)
+                    ]
+                ]
             ];
         });
 
         return response()->json([
             'success' => true,
             'message' => 'Daftar tugas review berhasil diambil.',
-            'data' => $taskList
+            'data' => $taskList,
+            'links' => [
+                [
+                    'rel' => 'self',
+                    'method' => 'GET',
+                    'href' => url('/api/reviewer/dashboard')
+                ]
+            ]
         ]);
     }
 
@@ -135,7 +149,7 @@ class ReviewerManuscriptController extends Controller
         $assignment = ReviewSubmission::where('reviewer_id', $reviewer->id)
             ->where('manuscript_id', $manuscriptId)
             ->first();
-            
+
         if (!$assignment) {
             return response()->json([
                 'success' => false,
@@ -176,13 +190,30 @@ class ReviewerManuscriptController extends Controller
         $response = [
             'success' => true,
             'message' => 'Rubrik berhasil diambil.',
-            'data'    => ReviewRubricResource::collection($rubricData)
+            'data'    => ReviewRubricResource::collection($rubricData),
+            'links'   => [
+                [
+                    'rel' => 'self',
+                    'method' => 'GET',
+                    'href' => url('/api/reviewer/manuscripts/' . $manuscriptId . '/rubric')
+                ],
+                [
+                    'rel' => 'submit_review',
+                    'method' => 'POST',
+                    'href' => url('/api/reviewer/manuscripts/' . $manuscriptId . '/review')
+                ],
+                [
+                    'rel' => 'get_details',
+                    'method' => 'GET',
+                    'href' => url('/api/reviewer/manuscripts/' . $manuscriptId)
+                ]
+            ]
         ];
 
         if ($assignment->status === 'review_completed') {
             $response['submitted_review'] = [
                 'final_score'   => $existingOutcome ? round($existingOutcome->overall_score, 2) : null,
-                'status'        => $existingOutcome ? ($existingOutcome->status ? 'accepted' : 'rejected') : null,
+                'status'        => $existingOutcome ? ($existingOutcome->overall_score >= 75 ? 'accepted' : 'rejected') : null,
                 'feedback'      => $existingComment
             ];
         }

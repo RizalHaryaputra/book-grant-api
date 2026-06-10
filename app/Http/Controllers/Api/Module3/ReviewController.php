@@ -74,7 +74,6 @@ class ReviewController extends Controller
             DB::table('review_outcomes')->insert([
                 'rs_id'         => $submission->id,
                 'overall_score' => $reviewerScore,
-                'status'        => $reviewerScore >= 75 ? 1 : 0,
             ]);
 
             // 5. Update status penugasan reviewer
@@ -87,7 +86,16 @@ class ReviewController extends Controller
                 ->count();
 
             if ($totalReviewers === $completedReviewers) {
-                Manuscript::where('id', $manuscriptId)->update(['status' => 'review_completed']);
+                // Hitung rata-rata skor akhir dari semua reviewer
+                $compiledScore = DB::table('review_submissions')
+                    ->join('review_outcomes', 'review_submissions.id', '=', 'review_outcomes.rs_id')
+                    ->where('review_submissions.manuscript_id', $manuscriptId)
+                    ->avg('review_outcomes.overall_score') ?? 0;
+
+                $newStatus = $compiledScore >= 75 ? 'accepted' : 'revise';
+                Manuscript::where('id', $manuscriptId)->update(['status' => $newStatus]);
+            } else {
+                Manuscript::where('id', $manuscriptId)->update(['status' => 'pending']);
             }
         });
 
@@ -98,6 +106,23 @@ class ReviewController extends Controller
                 'manuscript_id' => $manuscriptId,
                 'status'        => 'review_completed',
             ],
+            'links' => [
+                [
+                    'rel' => 'get_details',
+                    'method' => 'GET',
+                    'href' => url("/api/reviewer/manuscripts/{$manuscriptId}")
+                ],
+                [
+                    'rel' => 'dashboard',
+                    'method' => 'GET',
+                    'href' => url('/api/reviewer/dashboard')
+                ],
+                [
+                    'rel' => 'compiled_reviews',
+                    'method' => 'GET',
+                    'href' => url("/api/manuscripts/{$manuscriptId}/compiled-reviews")
+                ]
+            ]
         ]);
     }
 
@@ -147,6 +172,13 @@ class ReviewController extends Controller
             'success' => true,
             'message' => 'Kompilasi review berhasil diambil.',
             'data'    => new CompiledReviewResource($compiled),
+            'links'   => [
+                [
+                    'rel' => 'self',
+                    'method' => 'GET',
+                    'href' => url("/api/manuscripts/{$manuscriptId}/compiled-reviews")
+                ]
+            ]
         ]);
     }
 }

@@ -29,7 +29,19 @@ class AdminRubricController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Daftar rubrik berhasil diambil.',
-            'data' => $rubrics
+            'data' => $rubrics,
+            'links' => [
+                [
+                    'rel' => 'self',
+                    'method' => 'GET',
+                    'href' => url('/api/admin/rubrics')
+                ],
+                [
+                    'rel' => 'create',
+                    'method' => 'POST',
+                    'href' => url('/api/admin/rubrics')
+                ]
+            ]
         ]);
     }
 
@@ -50,7 +62,29 @@ class AdminRubricController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Detail rubrik berhasil diambil.',
-            'data' => $rubric
+            'data' => $rubric,
+            'links' => [
+                [
+                    'rel' => 'self',
+                    'method' => 'GET',
+                    'href' => url('/api/admin/rubrics/' . $rubric->id)
+                ],
+                [
+                    'rel' => 'update',
+                    'method' => 'PUT',
+                    'href' => url('/api/admin/rubrics/' . $rubric->id)
+                ],
+                [
+                    'rel' => 'delete',
+                    'method' => 'DELETE',
+                    'href' => url('/api/admin/rubrics/' . $rubric->id)
+                ],
+                [
+                    'rel' => 'all_rubrics',
+                    'method' => 'GET',
+                    'href' => url('/api/admin/rubrics')
+                ]
+            ]
         ]);
     }
 
@@ -87,7 +121,29 @@ class AdminRubricController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Kriteria rubrik berhasil ditambahkan.',
-                'data' => $rubric
+                'data' => $rubric,
+                'links' => [
+                    [
+                        'rel' => 'self',
+                        'method' => 'GET',
+                        'href' => url('/api/admin/rubrics/' . $rubric->id)
+                    ],
+                    [
+                        'rel' => 'update',
+                        'method' => 'PUT',
+                        'href' => url('/api/admin/rubrics/' . $rubric->id)
+                    ],
+                    [
+                        'rel' => 'delete',
+                        'method' => 'DELETE',
+                        'href' => url('/api/admin/rubrics/' . $rubric->id)
+                    ],
+                    [
+                        'rel' => 'all_rubrics',
+                        'method' => 'GET',
+                        'href' => url('/api/admin/rubrics')
+                    ]
+                ]
             ], 201);
         } catch (\Exception $e) {
             DB::rollBack();
@@ -160,7 +216,24 @@ class AdminRubricController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Kriteria rubrik berhasil diperbarui.',
-                'data' => $rubric->fresh()
+                'data' => $rubric->fresh(),
+                'links' => [
+                    [
+                        'rel' => 'self',
+                        'method' => 'GET',
+                        'href' => url('/api/admin/rubrics/' . $rubric->id)
+                    ],
+                    [
+                        'rel' => 'delete',
+                        'method' => 'DELETE',
+                        'href' => url('/api/admin/rubrics/' . $rubric->id)
+                    ],
+                    [
+                        'rel' => 'all_rubrics',
+                        'method' => 'GET',
+                        'href' => url('/api/admin/rubrics')
+                    ]
+                ]
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
@@ -189,7 +262,19 @@ class AdminRubricController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Kriteria rubrik berhasil dihapus.'
+            'message' => 'Kriteria rubrik berhasil dihapus.',
+            'links' => [
+                [
+                    'rel' => 'all_rubrics',
+                    'method' => 'GET',
+                    'href' => url('/api/admin/rubrics')
+                ],
+                [
+                    'rel' => 'create',
+                    'method' => 'POST',
+                    'href' => url('/api/admin/rubrics')
+                ]
+            ]
         ]);
     }
 }
