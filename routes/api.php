@@ -17,6 +17,9 @@ use App\Http\Controllers\Api\Module3\ReviewController;
 if (!class_exists('MockAuthMiddleware')) {
     class MockAuthMiddleware {
         public function handle($request, $next) {
+            if (app()->environment('testing')) {
+                return $next($request);
+            }
             // 1 = Admin, 2 = Reviewer, 3 = Author, 4 = Editor
             // Change this ID to test different roles
             $user = \App\Models\User::find(2);

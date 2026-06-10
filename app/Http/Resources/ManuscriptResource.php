@@ -45,6 +45,21 @@ class ManuscriptResource extends JsonResource
             $file_url = $this->resource['file_url'] ?? null;
         }
 
+        // Determine if requesting user is an Admin
+        $user = $request->user() ?? auth()->user();
+        $isAdmin = false;
+        if ($user) {
+            $roleName = null;
+            if (method_exists($user, 'role') && $user->role) {
+                $roleName = $user->role->name;
+            } elseif (isset($user->role_id)) {
+                $roleName = \Illuminate\Support\Facades\DB::table('roles')->where('id', $user->role_id)->value('name');
+            }
+            $isAdmin = ($roleName === 'admin');
+        } else {
+            $isAdmin = $request->is('api/admin/*');
+        }
+
         $reviewers = [];
         $tenggat = '';
         if ($isModel) {
@@ -52,10 +67,20 @@ class ManuscriptResource extends JsonResource
             foreach ($this->reviewSubmissions ?? [] as $sub) {
                 if ($sub->reviewer && !in_array($sub->reviewer->id, $seen)) {
                     $seen[] = $sub->reviewer->id;
-                    $reviewers[] = [
+                    $reviewerData = [
                         'id'   => $sub->reviewer->id,
                         'name' => $sub->reviewer->name,
                     ];
+                    if ($isAdmin) {
+                        $reviewerData['links'] = [
+                            [
+                                'rel' => 'remove_reviewer',
+                                'method' => 'DELETE',
+                                'href' => url("/api/admin/manuscripts/{$id}/remove-reviewer/{$sub->reviewer->id}")
+                            ]
+                        ];
+                    }
+                    $reviewers[] = $reviewerData;
                 }
             }
             $firstSub = $this->reviewSubmissions->first();
@@ -63,7 +88,23 @@ class ManuscriptResource extends JsonResource
                 $tenggat = $firstSub->deadline->translatedFormat('j F Y');
             }
         } else {
-            $reviewers = $this->resource['reviewers'] ?? [];
+            $rawReviewers = $this->resource['reviewers'] ?? [];
+            foreach ($rawReviewers as $r) {
+                $reviewerData = [
+                    'id'   => $r['id'] ?? null,
+                    'name' => $r['name'] ?? '',
+                ];
+                if ($isAdmin && isset($reviewerData['id'])) {
+                    $reviewerData['links'] = [
+                        [
+                            'rel' => 'remove_reviewer',
+                            'method' => 'DELETE',
+                            'href' => url("/api/admin/manuscripts/{id}/remove-reviewer/{$reviewerData['id']}")
+                        ]
+                    ];
+                }
+                $reviewers[] = $reviewerData;
+            }
             $tenggat = $this->resource['tenggat'] ?? '';
         }
 
@@ -83,17 +124,19 @@ class ManuscriptResource extends JsonResource
         // HATEOAS Links
         $links = [];
 
-        // Admin link: Assign Reviewer (if manuscript is unassigned)
-        if ($status === 'initial_draft_uploaded') {
-            $links[] = [
-                'rel' => 'assign_reviewer',
-                'method' => 'POST',
-                'href' => url("/api/admin/manuscripts/{$id}/assign-reviewer")
-            ];
+        // Admin links: Assign Reviewer (if manuscript status allows and requester is admin)
+        if ($isAdmin) {
+            if (in_array($status, ['initial_draft_uploaded', 'reviewer_assigned', 'under_review'])) {
+                $links[] = [
+                    'rel' => 'assign_reviewer',
+                    'method' => 'POST',
+                    'href' => url("/api/admin/manuscripts/{$id}/assign-reviewer")
+                ];
+            }
         }
 
         // Reviewer links
-        if (in_array($status, ['reviewer_assigned', 'under_review', 'review_in_progress'])) {
+        if (in_array($status, ['reviewer_assigned', 'under_review', 'review_in_progress', 'pending'])) {
             $links[] = [
                 'rel' => 'get_details',
                 'method' => 'GET',
@@ -109,10 +152,15 @@ class ManuscriptResource extends JsonResource
                 'method' => 'POST',
                 'href' => url("/api/reviewer/manuscripts/{$id}/review")
             ];
+            $links[] = [
+                'rel' => 'download_draft',
+                'method' => 'GET',
+                'href' => url("/api/reviewer/manuscripts/{$id}/download")
+            ];
         }
 
         // General link to get compiled reviews
-        if (in_array($status, ['review_completed', 'revised', 'approved'])) {
+        if (in_array($status, ['review_completed', 'revised', 'approved', 'accepted', 'revise'])) {
             $links[] = [
                 'rel' => 'compiled_reviews',
                 'method' => 'GET',

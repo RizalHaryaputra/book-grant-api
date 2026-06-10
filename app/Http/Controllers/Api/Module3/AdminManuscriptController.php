@@ -24,7 +24,24 @@ class AdminManuscriptController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Daftar naskah belum diplot berhasil diambil.',
-            'data' => ManuscriptResource::collection($unassigned)
+            'data' => ManuscriptResource::collection($unassigned),
+            'links' => [
+                [
+                    'rel' => 'self',
+                    'method' => 'GET',
+                    'href' => url('/api/admin/manuscripts/unassigned')
+                ],
+                [
+                    'rel' => 'all_manuscripts',
+                    'method' => 'GET',
+                    'href' => url('/api/admin/manuscripts')
+                ],
+                [
+                    'rel' => 'get_reviewers',
+                    'method' => 'GET',
+                    'href' => url('/api/admin/reviewers')
+                ]
+            ]
         ]);
     }
 
@@ -38,7 +55,24 @@ class AdminManuscriptController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Daftar semua naskah berhasil diambil.',
-            'data' => ManuscriptResource::collection($manuscripts)
+            'data' => ManuscriptResource::collection($manuscripts),
+            'links' => [
+                [
+                    'rel' => 'self',
+                    'method' => 'GET',
+                    'href' => url('/api/admin/manuscripts')
+                ],
+                [
+                    'rel' => 'unassigned_manuscripts',
+                    'method' => 'GET',
+                    'href' => url('/api/admin/manuscripts/unassigned')
+                ],
+                [
+                    'rel' => 'get_reviewers',
+                    'method' => 'GET',
+                    'href' => url('/api/admin/reviewers')
+                ]
+            ]
         ]);
     }
 
@@ -65,7 +99,24 @@ class AdminManuscriptController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Daftar reviewer berhasil diambil.',
-            'data' => $data
+            'data' => $data,
+            'links' => [
+                [
+                    'rel' => 'self',
+                    'method' => 'GET',
+                    'href' => url('/api/admin/reviewers')
+                ],
+                [
+                    'rel' => 'all_manuscripts',
+                    'method' => 'GET',
+                    'href' => url('/api/admin/manuscripts')
+                ],
+                [
+                    'rel' => 'unassigned_manuscripts',
+                    'method' => 'GET',
+                    'href' => url('/api/admin/manuscripts/unassigned')
+                ]
+            ]
         ]);
     }
 
