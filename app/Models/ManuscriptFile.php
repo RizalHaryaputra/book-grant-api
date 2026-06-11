@@ -1,13 +1,17 @@
 <?php
 
+<<<<<<< HEAD
 declare(strict_types=1);
 
+=======
+>>>>>>> origin/module-3
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+<<<<<<< HEAD
 /**
  * ManuscriptFile Model
  *
@@ -22,6 +26,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string      $revision_note
  * @property string      $uploaded_at
  */
+=======
+>>>>>>> origin/module-3
 class ManuscriptFile extends Model
 {
     use HasFactory;
@@ -36,6 +42,7 @@ class ManuscriptFile extends Model
         'file_type',
         'version',
         'revision_note',
+<<<<<<< HEAD
         'uploaded_at'
     ];
 
@@ -49,5 +56,20 @@ class ManuscriptFile extends Model
     public function manuscript(): BelongsTo
     {
         return $this->belongsTo(Manuscript::class);
+=======
+        'uploaded_at',
+    ];
+
+    protected $casts = [
+        'uploaded_at' => 'datetime',
+    ];
+
+    /**
+     * Get the manuscript that owns the file.
+     */
+    public function manuscript(): BelongsTo
+    {
+        return $this->belongsTo(Manuscript::class, 'manuscript_id');
+>>>>>>> origin/module-3
     }
 }

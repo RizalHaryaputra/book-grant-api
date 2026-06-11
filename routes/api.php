@@ -21,6 +21,12 @@ use App\Http\Controllers\Api\V1\UserDashboardController;
 // Controller Kelompok 3 (Modul Penulis dan Manajemen Naskah)
 use App\Http\Controllers\ManuscriptController;
 
+// Controller Kelompok 2 (Modul Reviewer dan Proses Review)
+use App\Http\Controllers\Api\Module3\AdminManuscriptController;
+use App\Http\Controllers\Api\Module3\AdminRubricController;
+use App\Http\Controllers\Api\Module3\ReviewerManuscriptController;
+use App\Http\Controllers\Api\Module3\ReviewController;
+
 // =========================================================================
 // 1. GRUP RUTE ADMIN (Wajib Login & Harus Role Admin)
 // =========================================================================
@@ -28,11 +34,30 @@ Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
     // Rute Manajemen User
     Route::get('/admin/users', [AdminUserController::class, 'index']);
     Route::post('/admin/users', [AdminUserController::class, 'store']);
-    Route::put('/admin/users/{id}', [AdminUserController::class, 'update']); // <-- INI PINTU UNTUK EDIT
-    Route::delete('/admin/users/{id}', [AdminUserController::class, 'destroy']); // <-- INI PINTU UNTUK HAPUS
-    // Tambahkan baris ini tepat di bawah rute user:
+    Route::put('/admin/users/{id}', [AdminUserController::class, 'update']);
+    Route::delete('/admin/users/{id}', [AdminUserController::class, 'destroy']);
+    
+    // Rute Manajemen Kontrak
     Route::get('/admin/contracts', [ContractController::class, 'index']);
     Route::post('/admin/contracts/{id}/validate', [ContractController::class, 'validateContract']);
+
+    // Rute Plotting & Review (Kelompok 2 / Module 3)
+    Route::prefix('admin/manuscripts')->group(function () {
+        Route::get('/', [AdminManuscriptController::class, 'index']);
+        Route::get('/unassigned', [AdminManuscriptController::class, 'getUnassigned']);
+        Route::post('/{manuscriptId}/assign-reviewer', [AdminManuscriptController::class, 'assignReviewer']);
+        Route::delete('/{manuscriptId}/remove-reviewer/{reviewerId}', [AdminManuscriptController::class, 'removeReviewer']);
+    });
+    Route::get('/admin/reviewers', [AdminManuscriptController::class, 'getReviewers']);
+
+    // Rubric Management
+    Route::prefix('admin/rubrics')->group(function () {
+        Route::get('/', [AdminRubricController::class, 'index']);
+        Route::get('/{id}', [AdminRubricController::class, 'show']);
+        Route::post('/', [AdminRubricController::class, 'store']);
+        Route::put('/{id}', [AdminRubricController::class, 'update']);
+        Route::delete('/{id}', [AdminRubricController::class, 'destroy']);
+    });
 });
 
 // =========================================================================
@@ -52,10 +77,12 @@ Route::middleware('auth:sanctum')->group(function () {
             'data' => $request->user()->load('role')
         ], 200);
     });
+
+    // Kontrak Penulis
     Route::post('/author/contracts/upload', [ContractController::class, 'upload']);
     Route::get('/author/contracts/my-contract', [ContractController::class, 'myContract']);
 
-    // Rute Penulis dan Manajemen Naskah (Kelompok 3)
+    // Rute Penulis dan Manajemen Naskah (Kelompok 3 / Module 2)
     Route::prefix('author')->group(function () {
         Route::get('/dashboard', [ManuscriptController::class, 'dashboard']);
         Route::post('/manuscripts/drafts', [ManuscriptController::class, 'uploadDraft']);
@@ -69,11 +96,27 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/manuscripts/{manuscriptId}/publisher-check', [ManuscriptController::class, 'publisherCheck']);
         Route::post('/manuscripts/{manuscriptId}/preprint-revision', [ManuscriptController::class, 'uploadPreprintRevision']);
     });
+
+    // Rute Reviewer (Kelompok 2 / Module 3)
+    Route::prefix('reviewer')->middleware('role:reviewer')->group(function () {
+        Route::get('/dashboard', [ReviewerManuscriptController::class, 'dashboard']);
+        Route::prefix('manuscripts/{manuscriptId}')->group(function () {
+            Route::get('/', [ReviewerManuscriptController::class, 'show']);
+            Route::get('/rubric', [ReviewerManuscriptController::class, 'getRubric']);
+            Route::post('/review', [ReviewController::class, 'submitReview']);
+            Route::get('/download', [ReviewerManuscriptController::class, 'downloadDraft']);
+        });
+    });
+
+    // Rute Kompilasi Review (bisa diakses admin, reviewer, author)
+    Route::get('/manuscripts/{manuscriptId}/compiled-reviews', [ReviewController::class, 'getCompiledReviews'])
+        ->middleware('role:admin,reviewer,author');
+
 });
 
 /*
 |--------------------------------------------------------------------------
-| API Routes — Book Grant API v1 (Modul Kelompok 1)
+| API Routes — Book Grant API v1 (Modul Kelompok 1 / Module 4)
 |--------------------------------------------------------------------------
 */
 Route::prefix('v1')->group(function () {
