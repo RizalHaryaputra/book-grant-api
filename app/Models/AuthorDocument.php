@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -17,9 +18,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int         $manuscript_id
  * @property string      $document_type
  * @property string      $file_path
+ * @property bool        $is_valid
+ * @property string      $uploaded_at
  */
 class AuthorDocument extends Model
 {
+    use HasFactory;
+
     protected $table = 'author_documents';
 
     public $timestamps = false;
@@ -28,6 +33,8 @@ class AuthorDocument extends Model
         'manuscript_id',
         'document_type',
         'file_path',
+        'is_valid',
+        'uploaded_at'
     ];
 
     // -----------------------------------------------------------------

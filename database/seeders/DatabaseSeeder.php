@@ -11,11 +11,14 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // Hanya memanggil seeder buatan kita, tanpa factory bawaan Laravel
         $this->call([
             RoleSeeder::class,
             AdminSeeder::class,
+            ManuscriptSeeder::class,
+            ManuscriptFileSeeder::class,
+            AuthorDocumentSeeder::class,
         ]);
+        
         $this->call(DBSeeder::class);
     }
 }

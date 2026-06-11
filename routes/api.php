@@ -18,6 +18,9 @@ use App\Http\Controllers\Api\V1\PublisherController;
 use App\Http\Controllers\Api\V1\ReminderController;
 use App\Http\Controllers\Api\V1\UserDashboardController;
 
+// Controller Kelompok 3 (Modul Penulis dan Manajemen Naskah)
+use App\Http\Controllers\ManuscriptController;
+
 // =========================================================================
 // 1. GRUP RUTE ADMIN (Wajib Login & Harus Role Admin)
 // =========================================================================
@@ -51,6 +54,21 @@ Route::middleware('auth:sanctum')->group(function () {
     });
     Route::post('/author/contracts/upload', [ContractController::class, 'upload']);
     Route::get('/author/contracts/my-contract', [ContractController::class, 'myContract']);
+
+    // Rute Penulis dan Manajemen Naskah (Kelompok 3)
+    Route::prefix('author')->group(function () {
+        Route::get('/dashboard', [ManuscriptController::class, 'dashboard']);
+        Route::post('/manuscripts/drafts', [ManuscriptController::class, 'uploadDraft']);
+        Route::post('/manuscripts/{manuscriptId}/documents', [ManuscriptController::class, 'uploadDocument']);
+        Route::get('/manuscripts/{manuscriptId}/reviews', [ManuscriptController::class, 'reviews']);
+        Route::post('/manuscripts/{manuscriptId}/revisions', [ManuscriptController::class, 'uploadRevision']);
+        Route::get('/manuscripts/{manuscriptId}', [ManuscriptController::class, 'show']);
+        Route::put('/manuscripts/{manuscriptId}', [ManuscriptController::class, 'updateMetadata']);
+        Route::get('/manuscripts/{manuscriptId}/files', [ManuscriptController::class, 'files']);
+        Route::get('/manuscripts/{manuscriptId}/documents', [ManuscriptController::class, 'documents']);
+        Route::get('/manuscripts/{manuscriptId}/publisher-check', [ManuscriptController::class, 'publisherCheck']);
+        Route::post('/manuscripts/{manuscriptId}/preprint-revision', [ManuscriptController::class, 'uploadPreprintRevision']);
+    });
 });
 
 /*
