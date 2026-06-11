@@ -94,4 +94,85 @@ class AdminUserController extends Controller
             ], 500);
         }
     }
+
+    // ==========================================
+    // Mengubah data akun (PUT)
+    // ==========================================
+    public function update(Request $request, $id)
+    {
+        $user = User::find($id);
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'User tidak ditemukan.'
+            ], 404);
+        }
+
+        // Validasi input edit
+        $validator = Validator::make($request->all(), [
+            'name' => 'sometimes|required|string|max:255',
+            'is_active' => 'sometimes|required|boolean',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validasi gagal.',
+                'data' => ['errors' => $validator->errors()]
+            ], 422);
+        }
+
+        try {
+            // Update data
+            if ($request->has('name')) $user->name = $request->name;
+            if ($request->has('is_active')) $user->is_active = $request->is_active;
+            
+            $user->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Data user berhasil diperbarui.',
+                'data' => $user
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan sistem saat update akun.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    // ==========================================
+    // Menghapus akun (DELETE)
+    // ==========================================
+    public function destroy($id)
+    {
+        $user = User::find($id);
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'User tidak ditemukan.'
+            ], 404);
+        }
+
+        try {
+            $user->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Data user berhasil dihapus.'
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan sistem saat menghapus akun.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 }

@@ -8,7 +8,20 @@ use Illuminate\Support\Facades\Validator;
 
 class ContractController extends Controller
 {
-    // ==========================================
+
+    // Tambahkan fungsi ini di dalam ContractController.php
+    public function index()
+    {
+        // Mengambil semua kontrak, diurutkan dari yang terbaru
+        $contracts = Contract::with('authorProfile.user')->orderBy('created_at', 'desc')->get();
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Berhasil mengambil daftar kontrak',
+            'data' => $contracts
+        ]);
+    }
+   // ==========================================
     // FUNGSI PENULIS: Upload Kontrak
     // ==========================================
     public function upload(Request $request)
@@ -23,9 +36,9 @@ class ContractController extends Controller
             ], 404);
         }
 
-        // 2. Validasi input (Wajib berupa file PDF, maksimal 5MB)
+        // 2. Validasi input (Wajib berupa file PDF, maksimal 10MB)
         $validator = Validator::make($request->all(), [
-            'contract_file' => 'required|file|mimes:pdf|max:5120', 
+            'contract_file' => 'required|file|mimes:pdf|max:10240', // <-- SUDAH JADI 10MB
         ]);
 
         if ($validator->fails()) {
@@ -38,22 +51,20 @@ class ContractController extends Controller
 
         try {
             // 3. Simpan file PDF ke folder storage Laravel
-            $file = $request->file('contract_file');
+            $file = $request->file('contract_file'); // <-- Nama amplop harus sesuai
             $filename = time() . '_kontrak_' . $authorProfile->id . '.' . $file->getClientOriginalExtension();
             
             // File akan tersimpan di folder: storage/app/public/contracts
             $path = $file->storeAs('contracts', $filename, 'public');
 
-            // 4. Simpan atau Update data di database
-            $contract = Contract::updateOrCreate(
-                ['author_profile_id' => $authorProfile->id], // Cari berdasarkan ID penulis
-                [
-                    'file_url' => $path,
-                    'status' => 'uploaded',
-                    'uploaded_at' => now(),
-                    'rejection_reason' => null // Reset alasan penolakan jika upload ulang
-                ]
-            );
+            // 4. Simpan sebagai baris data BARU di database
+                    $contract = Contract::create([
+                        'author_profile_id' => $authorProfile->id,
+                        'file_url' => $path,
+                        'status' => 'uploaded',
+                        'uploaded_at' => now(),
+                        'rejection_reason' => null
+                    ]);
 
             return response()->json([
                 'success' => true,
@@ -136,8 +147,10 @@ class ContractController extends Controller
             ], 404);
         }
 
-        // 2. Cari kontrak milik penulis ini
-        $contract = Contract::where('author_profile_id', $authorProfile->id)->first();
+        // 2. Cari kontrak milik penulis ini (AMBIL YANG TERBARU!)
+        $contract = Contract::where('author_profile_id', $authorProfile->id)
+                            ->latest() // <--- WAJIB TAMBAHKAN INI AGAR MENGAMBIL DATA TERPARIPURNA
+                            ->first();
 
         if (!$contract) {
             return response()->json([

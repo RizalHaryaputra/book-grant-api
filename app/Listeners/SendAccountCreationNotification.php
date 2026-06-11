@@ -9,6 +9,8 @@ use App\Services\NotificationService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\AccountCreatedMail; // Pastikan file Mailable ini sudah ada di folder app/Mail!
 
 /**
  * SendAccountCreationNotification Listener
@@ -71,35 +73,33 @@ class SendAccountCreationNotification implements ShouldQueue
             ['subject' => $subject, 'body_html' => $bodyHtml] =
                 $this->notificationService->getTemplate(self::EVENT_TYPE, $payload);
 
+                        // --------------------------------------------------------------
+            // Step 2: Persist the notification log entry. (KITA MATIKAN DULU)
             // --------------------------------------------------------------
-            // Step 2: Persist the notification log entry.
-            //
-            // NOTE: manuscript_id and rs_id are nullable for account-level
-            // events that are not tied to any specific manuscript or review.
+            // DB::table('notification_log')->insert([
+            //     'recipient_id'  => $payload['user_id'],
+            //     'manuscript_id' => null, 
+            //     'rs_id'         => null, 
+            //     'event_type'    => self::EVENT_TYPE,
+            //     'email_to'      => $payload['email'],
+            //     'subject'       => $subject,
+            //     'body_html'     => $bodyHtml,
+            //     'status'        => 'sent',          
+            //     'sent_at'       => now(),
+            //     'error_message' => null,
+            //     'created_at'    => now(),
+            //     'updated_at'    => now(),
+            // ]);
+
             // --------------------------------------------------------------
-            DB::table('notification_log')->insert([
-                'recipient_id'  => $payload['user_id'],
-                'manuscript_id' => null, // Not applicable for account events
-                'rs_id'         => null, // Not applicable for account events
-                'event_type'    => self::EVENT_TYPE,
-                'email_to'      => $payload['email'],
-                'subject'       => $subject,
-                'body_html'     => $bodyHtml,
-                'status'        => 'sent',           // Mocked: no SMTP yet
-                'sent_at'       => now(),
-                'error_message' => null,
-                'created_at'    => now(),
-                'updated_at'    => now(),
+            // Step 3: Kirim Email Sungguhan ke Mailtrap!
+            // --------------------------------------------------------------
+            Log::info('[SendAccountCreationNotification] Mengirim email sungguhan ke Mailtrap...', [
+                'email_to' => $payload['email']
             ]);
 
-            Log::info('[SendAccountCreationNotification] Notification log entry created.', [
-                'recipient_id' => $payload['user_id'],
-                'email_to'     => $payload['email'],
-                'event_type'   => self::EVENT_TYPE,
-            ]);
-
-            // TODO: Replace the mock below with an actual Mailable dispatch.
-            // Mail::to($payload['email'])->send(new AccountCreatedMail($subject, $bodyHtml));
+            // Hapus tanda // di bawah ini!
+            Mail::to($payload['email'])->send(new AccountCreatedMail($subject, $bodyHtml));
 
         } catch (\InvalidArgumentException $e) {
             Log::error('[SendAccountCreationNotification] Template not found.', [

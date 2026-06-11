@@ -9,8 +9,15 @@ class Contract extends Model
 {
     use HasFactory;
 
-    // 1. Membuka gembok agar fitur "updateOrCreate" di Controller tadi diizinkan masuk
-    protected $guarded = [];
+    // 1. Daftar kolom yang DIIZINKAN untuk diisi secara massal (Mass Assignment)
+    protected $fillable = [
+        'author_profile_id',
+        'file_url',
+        'status',
+        'rejection_reason',
+        'uploaded_at',
+        'validated_at'
+    ];
 
     // 2. Memberi tahu Laravel bahwa kolom ini adalah format Tanggal/Waktu (Carbon)
     protected $casts = [

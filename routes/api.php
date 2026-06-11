@@ -22,8 +22,13 @@ use App\Http\Controllers\Api\V1\UserDashboardController;
 // 1. GRUP RUTE ADMIN (Wajib Login & Harus Role Admin)
 // =========================================================================
 Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
-    Route::post('/admin/users', [AdminUserController::class, 'store']);
+    // Rute Manajemen User
     Route::get('/admin/users', [AdminUserController::class, 'index']);
+    Route::post('/admin/users', [AdminUserController::class, 'store']);
+    Route::put('/admin/users/{id}', [AdminUserController::class, 'update']); // <-- INI PINTU UNTUK EDIT
+    Route::delete('/admin/users/{id}', [AdminUserController::class, 'destroy']); // <-- INI PINTU UNTUK HAPUS
+    // Tambahkan baris ini tepat di bawah rute user:
+    Route::get('/admin/contracts', [ContractController::class, 'index']);
     Route::post('/admin/contracts/{id}/validate', [ContractController::class, 'validateContract']);
 });
 
@@ -44,8 +49,8 @@ Route::middleware('auth:sanctum')->group(function () {
             'data' => $request->user()->load('role')
         ], 200);
     });
-    Route::post('/contracts/upload', [ContractController::class, 'upload']);
-    Route::get('/contracts/my-contract', [ContractController::class, 'myContract']);
+    Route::post('/author/contracts/upload', [ContractController::class, 'upload']);
+    Route::get('/author/contracts/my-contract', [ContractController::class, 'myContract']);
 });
 
 /*

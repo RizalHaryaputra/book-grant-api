@@ -14,9 +14,9 @@ namespace App\Services;
  * refactored to query from it first, falling back to hardcoded defaults.
  *
  * Usage:
- *   $service = app(NotificationService::class);
- *   ['subject' => $subject, 'body_html' => $body] =
- *       $service->getTemplate('account_created', ['name' => 'John Doe', ...]);
+ * $service = app(NotificationService::class);
+ * ['subject' => $subject, 'body_html' => $body] =
+ * $service->getTemplate('account_created', ['name' => 'John Doe', ...]);
  */
 class NotificationService
 {
@@ -24,8 +24,8 @@ class NotificationService
      * Retrieve and render a notification template for the given event type.
      *
      * Supported event types:
-     *   - 'account_created'      → requires: name, email
-     *   - 'contract_validated'   → requires: name, email, manuscript_title
+     * - 'account_created'      → requires: name, email, raw_password
+     * - 'contract_validated'   → requires: name, email, manuscript_title
      *
      * @param  string  $eventType  The event identifier string.
      * @param  array   $data       Key-value pairs used to populate the template.
@@ -52,7 +52,7 @@ class NotificationService
     /**
      * Build the 'account_created' email template.
      *
-     * Required $data keys: name, email
+     * Required $data keys: name, email, raw_password
      *
      * @param  array  $data
      * @return array{subject: string, body_html: string}
@@ -77,6 +77,7 @@ class NotificationService
                 .body h2 { color: #1a56db; font-size: 20px; }
                 .footer { background-color: #f4f4f4; text-align: center; padding: 20px 40px; font-size: 12px; color: #999999; }
                 .btn { display: inline-block; margin-top: 20px; padding: 12px 28px; background-color: #1a56db; color: #ffffff; text-decoration: none; border-radius: 5px; font-size: 15px; }
+                .password-box { background-color: #f3f4f6; padding: 4px 10px; border-radius: 4px; font-family: monospace; font-weight: bold; color: #111827; letter-spacing: 1px; }
             </style>
         </head>
         <body>
@@ -86,9 +87,12 @@ class NotificationService
                 </div>
                 <div class="body">
                     <h2>Halo, {{name}}!</h2>
-                    <p>Selamat datang di <strong>Book Grant Platform</strong>. Akun Anda telah berhasil dibuat dengan alamat email berikut:</p>
-                    <p><strong>Email:</strong> {{email}}</p>
-                    <p>Anda kini dapat masuk ke platform dan mulai mengajukan manuskrip Anda untuk program hibah buku.</p>
+                    <p>Selamat datang di <strong>Book Grant Platform</strong>. Akun Anda telah berhasil dibuat dengan kredensial berikut:</p>
+                    <p>
+                        <strong>Email:</strong> {{email}}<br>
+                        <strong>Password:</strong> <span class="password-box">{{password}}</span>
+                    </p>
+                    <p>Anda kini dapat masuk ke platform dan mulai mengajukan manuskrip Anda untuk program hibah buku. Kami sangat menyarankan Anda untuk segera mengubah password ini setelah berhasil login.</p>
                     <p>Jika Anda merasa tidak mendaftarkan akun ini, abaikan email ini atau hubungi tim dukungan kami.</p>
                     <p>Salam hangat,<br><strong>Tim Book Grant</strong></p>
                 </div>
@@ -102,8 +106,12 @@ class NotificationService
 
         // Substitute placeholders with actual data values
         $bodyHtml = str_replace(
-            ['{{name}}', '{{email}}'],
-            [$data['name'] ?? 'Pengguna', $data['email'] ?? ''],
+            ['{{name}}', '{{email}}', '{{password}}'],
+            [
+                $data['name'] ?? 'Pengguna', 
+                $data['email'] ?? '', 
+                $data['raw_password'] ?? '********'
+            ],
             $bodyHtml
         );
 
