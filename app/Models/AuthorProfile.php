@@ -6,15 +6,16 @@ use Illuminate\Database\Eloquent\Model;
 
 class AuthorProfile extends Model
 {
-    protected $table = 'author_profiles'; 
+    protected $table = 'authors_profile';
+    const UPDATED_AT = null;
 
     protected $fillable = [
         'user_id',
-        'institution', 
+        'institutions', 
         'book_title',
         'book_type',
-        'ai_ethics_agreed',   
-        'willingness_statement', 
+        'at_ethics_agreed',   
+        'willingness_status', 
         'status'
     ];
 

@@ -26,7 +26,7 @@ class AdminDashboardController extends Controller
         // Role-aware author count (joins roles table)
         $totalPenulis = DB::table('users')
             ->join('roles', 'users.role_id', '=', 'roles.id')
-            ->where('roles.name', 'penulis')
+            ->where('roles.name', 'author')
             ->count();
 
         // Contract pipeline

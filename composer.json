@@ -7,13 +7,8 @@
     "license": "MIT",
     "require": {
         "php": "^8.3",
-<<<<<<< HEAD
         "laravel/framework": "^13.8",
         "laravel/sanctum": "^4.3",
-=======
-        "laravel/framework": "^13.7",
-        "laravel/sanctum": "^4.0",
->>>>>>> origin/module-3
         "laravel/tinker": "^3.0"
     },
     "require-dev": {
@@ -86,13 +81,10 @@
             "pestphp/pest-plugin": true,
             "php-http/discovery": true
         },
-<<<<<<< HEAD
         "audit": {
             "block-insecure": false
-        }
-=======
+        },
         "platform-check": false
->>>>>>> origin/module-3
     },
     "minimum-stability": "stable",
     "prefer-stable": true

@@ -64,6 +64,7 @@ Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
 // 2. ENDPOINT PUBLIK (Bisa Diakses Siapa Saja Tanpa Token)
 // =========================================================================
 Route::post('/auth/login', [AuthController::class, 'login']);
+Route::get('/author-confirmations', [AuthorConfirmationController::class, 'index']);
 Route::post('/author-confirmations', [AuthorConfirmationController::class, 'store']);
 
 // =========================================================================

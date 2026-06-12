@@ -27,6 +27,9 @@ class RoleMiddleware
             $roleName = \Illuminate\Support\Facades\DB::table('roles')->where('id', $user->role_id)->value('name');
         }
 
+        if (config('app.env') === 'testing') {
+            dump($user->toArray(), $roleName, $roles);
+        }
         if (! in_array($roleName, $roles)) {
             return response()->json([
                 'success' => false,

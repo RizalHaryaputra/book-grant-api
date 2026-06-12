@@ -12,8 +12,8 @@ class DBSeeder extends Seeder
     public function run(): void
     {
         // PENTING: Matikan foreign key check sementara agar tidak error saat truncate/delete data lama
-        DB::statement('SET FOREIGN_KEY_CHECKS=0;');
-        
+        \Illuminate\Support\Facades\Schema::disableForeignKeyConstraints();
+
         // Bersihkan data lama jika ada
         DB::table('roles')->truncate();
         DB::table('users')->truncate();
@@ -163,6 +163,6 @@ class DBSeeder extends Seeder
         ]);
 
         // Aktifkan kembali foreign key check
-        DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+        \Illuminate\Support\Facades\Schema::enableForeignKeyConstraints();
     }
 }

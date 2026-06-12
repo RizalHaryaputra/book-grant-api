@@ -13,7 +13,7 @@ class ContractController extends Controller
     public function index()
     {
         // Mengambil semua kontrak, diurutkan dari yang terbaru
-        $contracts = Contract::with('authorProfile.user')->orderBy('created_at', 'desc')->get();
+        $contracts = Contract::with('authorProfile.user')->orderBy('uploaded_at', 'desc')->get();
         
         return response()->json([
             'success' => true,
@@ -61,7 +61,7 @@ class ContractController extends Controller
                     $contract = Contract::create([
                         'author_profile_id' => $authorProfile->id,
                         'file_url' => $path,
-                        'status' => 'uploaded',
+                        'status' => 'pending',
                         'uploaded_at' => now(),
                         'rejection_reason' => null
                     ]);
@@ -147,12 +147,12 @@ class ContractController extends Controller
             ], 404);
         }
 
-        // 2. Cari kontrak milik penulis ini (AMBIL YANG TERBARU!)
-        $contract = Contract::where('author_profile_id', $authorProfile->id)
-                            ->latest() // <--- WAJIB TAMBAHKAN INI AGAR MENGAMBIL DATA TERPARIPURNA
-                            ->first();
+        // 2. Cari kontrak milik penulis ini (AMBIL SEMUA RIWAYAT, URUTKAN DARI TERBARU!)
+        $contracts = Contract::where('author_profile_id', $authorProfile->id)
+                            ->latest('uploaded_at')
+                            ->get();
 
-        if (!$contract) {
+        if ($contracts->isEmpty()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Anda belum mengunggah dokumen kontrak.'
@@ -162,7 +162,7 @@ class ContractController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Berhasil mengambil data kontrak Anda.',
-            'data' => $contract
+            'data' => $contracts
         ], 200);
     }
 }

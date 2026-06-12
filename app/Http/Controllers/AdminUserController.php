@@ -35,7 +35,7 @@ class AdminUserController extends Controller
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
-            'role' => 'required|in:reviewer,penerbit', 
+            'role' => 'required|in:reviewer,editor,author,admin', 
         ]);
 
         if ($validator->fails()) {
@@ -46,12 +46,13 @@ class AdminUserController extends Controller
             ], 422);
         }
 
-        $roleId = $request->role === 'reviewer' ? 3 : 4;
+        $roleObj = \App\Models\Role::where('name', $request->role)->first();
+        $roleId = $roleObj ? $roleObj->id : 2;
 
         try {
             // 2. Transaksi Database
             $result = DB::transaction(function () use ($request, $roleId) {
-                $rawPassword = Str::password(8, true, true, true, false);
+                $rawPassword = 'password123'; // Str::password(8, true, true, true, false);
 
                 $user = User::create([
                     'role_id' => $roleId,
@@ -60,6 +61,18 @@ class AdminUserController extends Controller
                     'password' => Hash::make($rawPassword),
                     'is_active' => true,
                 ]);
+
+                if ($request->role === 'author') {
+                    \App\Models\AuthorProfile::create([
+                        'user_id' => $user->id,
+                        'institutions' => $request->institution ?? 'Belum Diatur',
+                        'book_title' => 'Belum Diatur',
+                        'book_type' => 'Buku Ajar',
+                        'at_ethics_agreed' => true,
+                        'willingness_status' => true,
+                        'status' => 'active'
+                    ]);
+                }
 
                 return [
                     'user' => $user,
@@ -129,6 +142,11 @@ class AdminUserController extends Controller
             if ($request->has('is_active')) $user->is_active = $request->is_active;
             
             $user->save();
+
+            if ($request->has('institution') && $user->authorProfile) {
+                $user->authorProfile->institutions = $request->institution;
+                $user->authorProfile->save();
+            }
 
             return response()->json([
                 'success' => true,

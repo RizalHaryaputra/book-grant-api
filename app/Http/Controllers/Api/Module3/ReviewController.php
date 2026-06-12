@@ -92,7 +92,7 @@ class ReviewController extends Controller
                     ->where('review_submissions.manuscript_id', $manuscriptId)
                     ->avg('review_outcomes.overall_score') ?? 0;
 
-                $newStatus = $compiledScore >= 75 ? 'accepted' : 'revise';
+                $newStatus = $compiledScore >= 75 ? 'accepted' : 'revision_requested';
                 Manuscript::where('id', $manuscriptId)->update(['status' => $newStatus]);
             } else {
                 Manuscript::where('id', $manuscriptId)->update(['status' => 'pending']);

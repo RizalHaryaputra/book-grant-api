@@ -63,7 +63,7 @@ class ManuscriptSeeder extends Seeder
             'title' => 'Pengantar Teknologi Informasi untuk Pemula',
             'book_type' => 'Buku Ajar',
             'abstract' => 'Buku ini membahas konsep dasar sistem komputer, jaringan, dan pengembangan perangkat lunak.',
-            'science_field' => 'Teknik Informatika',
+            'science_field' => 'Bidang Ilmu A',
             'total_pages' => 120,
             'status' => 'revision_required', 
             'created_at' => Carbon::now(),

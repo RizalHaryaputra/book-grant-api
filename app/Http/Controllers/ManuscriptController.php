@@ -303,7 +303,7 @@ class ManuscriptController extends Controller
                 ->orderBy('rs.id')
                 ->select([
                     'rs.id',
-                    DB::raw('COALESCE(ro.overall_score, rsc.nile) as score'),
+                    DB::raw('COALESCE(ro.overall_score, rsc.nilai) as score'),
                     'rc.comment as feedback',
                 ])
                 ->get()

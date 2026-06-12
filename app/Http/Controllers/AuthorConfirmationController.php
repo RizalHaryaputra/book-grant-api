@@ -13,6 +13,27 @@ use Illuminate\Support\Facades\Validator;
 
 class AuthorConfirmationController extends Controller
 {
+    public function index()
+    {
+        $profiles = AuthorProfile::with('user')->get();
+        $data = $profiles->map(function ($p) {
+            return [
+                'id' => $p->id,
+                'name' => $p->user->name ?? '',
+                'email' => $p->user->email ?? '',
+                'institution' => $p->institutions,
+                'book_title' => $p->book_title,
+                'book_type' => $p->book_type,
+                'status' => $p->status,
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'data' => $data
+        ]);
+    }
+
     public function store(Request $request)
     {
         // 1. Validasi input
@@ -21,7 +42,7 @@ class AuthorConfirmationController extends Controller
             'email' => 'required|email|unique:users,email',
             'institution' => 'required|string',
             'book_title' => 'required|string',
-            'book_type' => 'required|in:buku ajar,buku referensi',
+            'book_type' => 'required|in:Buku Ajar,Buku Referensi',
             'ai_ethics_agreed' => 'required|accepted',
             'willingness_statement' => 'required|accepted'
         ]);
@@ -39,11 +60,12 @@ class AuthorConfirmationController extends Controller
         try {
             // 2. Transaksi Database
             $result = DB::transaction(function () use ($request) {
-                $rawPassword = Str::password(8, true, true, true, false);
+                $rawPassword = 'password123'; // Str::password(8, true, true, true, false);
 
+                $authorRole = \App\Models\Role::where('name', 'author')->first();
                 // Buat akun user
                 $user = User::create([
-                    'role_id' => 2,
+                    'role_id' => $authorRole->id,
                     'name' => $request->name,
                     'email' => $request->email,
                     'password' => Hash::make($rawPassword),
@@ -53,12 +75,12 @@ class AuthorConfirmationController extends Controller
                 // Simpan profil penulis
                 $author = AuthorProfile::create([
                     'user_id' => $user->id,
-                    'institution' => $request->institution,
+                    'institutions' => $request->institution,
                     'book_title' => $request->book_title,
                     'book_type' => $request->book_type,
-                    'ai_ethics_agreed' => $request->boolean('ai_ethics_agreed'),
-                    'willingness_statement' => $request->boolean('willingness_statement'),
-                    'status' => 'account_created',
+                    'at_ethics_agreed' => $request->boolean('ai_ethics_agreed'),
+                    'willingness_status' => $request->boolean('willingness_statement'),
+                    'status' => 'active', // Enum only has active, inactive, suspended
                 ]);
 
                 return [

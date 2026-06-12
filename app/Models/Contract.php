@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class Contract extends Model
 {
     use HasFactory;
+    public $timestamps = false;
 
     // 1. Daftar kolom yang DIIZINKAN untuk diisi secara massal (Mass Assignment)
     protected $fillable = [
